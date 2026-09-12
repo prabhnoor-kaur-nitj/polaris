@@ -1,4 +1,4 @@
-// Domain types for the NCPOR Polar Logistics Engine UI.
+// Domain types for the POLARIS expedition logistics UI.
 // All state is client-side and localStorage-persisted (offline-first).
 
 export type NetworkMode = "online" | "lowband" | "offline";

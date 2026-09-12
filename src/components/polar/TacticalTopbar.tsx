@@ -75,12 +75,12 @@ export function TacticalTopbar({
           </span>
           <div className="min-w-0 leading-tight">
             <div className="hud-mono truncate text-[12px] font-bold tracking-[0.18em] text-[#d7f4ff]">
-              NCPOR <span className="text-[#48cae4]/70">|</span>{" "}
-              <span className="text-[#7be6fa]">POLAR LOGISTICS ENGINE</span>{" "}
+              POLARIS <span className="text-[#48cae4]/70">|</span>{" "}
+              <span className="text-[#7be6fa]">EXPEDITION COMMAND</span>{" "}
               <span className="text-[#48cae4]/60">v4.2</span>
             </div>
             <div className="hud-label mt-0.5 hidden sm:block">
-              MoES · Integrated Expedition Command · Bharati/Maitri Grid
+              Integrated Expedition Command · Bharati/Maitri Grid
             </div>
           </div>
         </div>

@@ -57,10 +57,10 @@ export default function Landing() {
       {/* Top nav */}
       <header className="sticky top-0 z-40 border-b border-[#48cae4]/15 bg-[#0b132b]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-          <img src={logo} alt="NCPOR" className="size-8 rounded-lg" />
+          <img src={logo} alt="POLARIS" className="size-8 rounded-lg" />
           <div className="hud-mono text-[11px] font-bold tracking-[0.18em] text-[#d7f4ff]">
-            NCPOR <span className="text-[#48cae4]/70">|</span>{" "}
-            <span className="text-[#7be6fa]">POLAR LOGISTICS ENGINE</span>{" "}
+            POLARIS <span className="text-[#48cae4]/70">|</span>{" "}
+            <span className="text-[#7be6fa]">EXPEDITION COMMAND</span>{" "}
             <span className="text-[#48cae4]/60">v4.2</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -109,7 +109,7 @@ export default function Landing() {
               </span>
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-[#9ec8dc] sm:text-lg">
-              The integrated logistics and asset management HUD for NCPOR / MoES Antarctic
+              The integrated logistics and asset management HUD for Antarctic
               stations. Track personnel radar, run the supply node, plan traverses and fire
               emergency solves — all on a tactical grid that keeps working when the link
               doesn't.
@@ -239,10 +239,10 @@ export default function Landing() {
       <footer className="border-t border-[#48cae4]/12 px-4 py-5">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
           <span className="hud-mono text-[9px] tracking-[0.18em] text-[#9ec8dc]/50">
-            NCPOR · MoES · MINISTRY OF EARTH SCIENCES
+            POLARIS · EXPEDITION COMMAND
           </span>
           <span className="hud-mono text-[9px] tracking-[0.18em] text-[#9ec8dc]/50">
-            POLAR LOGISTICS ENGINE v4.2 · SIMULATED FIELD ENVIRONMENT
+            v4.2 · SIMULATED FIELD ENVIRONMENT
           </span>
         </div>
       </footer>

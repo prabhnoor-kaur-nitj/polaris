@@ -125,7 +125,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             <>
               <CardHeader className="text-center">
                 <div className="flex justify-center">
-                  <img src={logo} alt="NCPOR" width={64} height={64} className="mb-4 mt-4 rounded-lg" />
+                  <img src={logo} alt="POLARIS" width={64} height={64} className="mb-4 mt-4 rounded-lg" />
                 </div>
                 <CardTitle className="flex items-center justify-center gap-2 text-xl">
                   <ShieldCheck className="size-5 text-[#00f5d4]" /> Initialize Command System
@@ -215,7 +215,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 <div className="flex justify-center">
                   <img
                     src={logo}
-                    alt="NCPOR"
+                    alt="POLARIS"
                     width={64}
                     height={64}
                     className="mb-4 mt-4 cursor-pointer rounded-lg"

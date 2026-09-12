@@ -127,10 +127,10 @@ export default function Dashboard() {
 
         <footer className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-[#48cae4]/10 pt-3">
           <span className="hud-mono text-[9px] tracking-[0.18em] text-[#9ec8dc]/50">
-            NCPOR · MoES · NATIONAL CENTRE FOR POLAR AND OCEAN RESEARCH
+            POLARIS · EXPEDITION COMMAND · SIMULATED FIELD BUILD
           </span>
           <span className="hud-mono text-[9px] tracking-[0.18em] text-[#9ec8dc]/50">
-            ENGINE v4.2 · LOCAL-FIRST FIELD BUILD · SECTOR 70S
+            ENGINE v4.2 · LOCAL-FIRST · SECTOR 70S
           </span>
         </footer>
       </main>

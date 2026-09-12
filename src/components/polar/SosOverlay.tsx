@@ -126,7 +126,7 @@ export function SosOverlay({
                   ? "OFFLINE — incident queued in local store. Rescue solve cached on-device; will broadcast when link restores."
                   : store.state.networkMode === "lowband"
                     ? "VHF MESH — narrowband burst queued. Repeat may take up to 5s per hop."
-                    : "SATCOM LIVE — incident broadcasting to NCPOR HQ and both station medics now."}
+                    : "SATCOM LIVE — incident broadcasting to POLARIS HQ and both station medics now."}
               </p>
             </div>
           </div>
