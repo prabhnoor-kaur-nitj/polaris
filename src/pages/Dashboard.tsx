@@ -1,3 +1,4 @@
+import { AccessControl } from "@/components/polar/AccessControl";
 import { MarkerInspector } from "@/components/polar/MarkerInspector";
 import { InventoryTab } from "@/components/polar/InventoryTab";
 import { RoutePlannerTab } from "@/components/polar/RoutePlannerTab";
@@ -12,17 +13,19 @@ import {
   Map,
   Package,
   Route as RouteIcon,
+  ShieldCheck,
   Siren,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useState } from "react";
 
-type TabId = "map" | "inventory" | "routes";
+type TabId = "map" | "inventory" | "routes" | "access";
 
 const TABS: { id: TabId; label: string; icon: typeof Map }[] = [
   { id: "map", label: "TACTICAL MAP & PERSONNEL RADAR", icon: Map },
   { id: "inventory", label: "INVENTORY & SUPPLY NODE", icon: Package },
   { id: "routes", label: "EXPEDITION & ROUTE PLANNING", icon: RouteIcon },
+  { id: "access", label: "ACCESS CONTROL", icon: ShieldCheck },
 ];
 
 export default function Dashboard() {
@@ -119,6 +122,7 @@ export default function Dashboard() {
           )}
           {tab === "inventory" && <InventoryTab store={store} />}
           {tab === "routes" && <RoutePlannerTab store={store} />}
+          {tab === "access" && <AccessControl />}
         </div>
 
         <footer className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-[#48cae4]/10 pt-3">

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNow } from "@/components/polar/hud";
+import { useAuth } from "@/hooks/use-auth";
 import { fmtDuration, fmtUtc, type PolarStore } from "@/lib/polar/store";
 import type { NetworkMode } from "@/lib/polar/types";
 import { cn } from "@/lib/utils";
@@ -8,6 +9,7 @@ import {
   RadioTower,
   RefreshCw,
   Satellite,
+  ShieldCheck,
   Signal,
   Snowflake,
   Timer,
@@ -48,6 +50,14 @@ export function TacticalTopbar({
   onSignOut: () => void;
 }) {
   const { state, setNetworkMode, forceSync } = store;
+  const { user } = useAuth();
+  const isMaster = user?.role === "master";
+  const initials = (user?.name ?? user?.email ?? "CMDR")
+    .split(/[\s@.]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
   const now = useNow(1000);
   const meta = MODE_META[state.networkMode];
   const Icon = meta.icon;
@@ -154,9 +164,12 @@ export function TacticalTopbar({
             className="hud-mono h-9 gap-2 rounded-lg border border-white/10 bg-white/5 px-3 text-[10px] font-bold tracking-[0.12em] text-[#9ec8dc] hover:bg-white/10 hover:text-[#d7f4ff]"
           >
             <span className="grid size-5 place-items-center rounded-full bg-[#48cae4]/20 text-[8px] text-[#7be6fa]">
-              SC
+              {initials}
             </span>
-            <span className="hidden sm:inline">SC-01 · CMDR</span>
+            <span className="hidden sm:inline">
+              {isMaster ? "MASTER" : (user?.name ?? user?.email ?? "OPERATOR").toUpperCase()}
+            </span>
+            {isMaster && <ShieldCheck className="size-3.5 text-[#00f5d4]" />}
           </Button>
         </div>
       </div>

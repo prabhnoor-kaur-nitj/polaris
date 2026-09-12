@@ -7,12 +7,15 @@ export const ROLES = {
   ADMIN: "admin",
   USER: "user",
   MEMBER: "member",
+  /** Sole account allowed to provision portal access for crew. */
+  MASTER: "master",
 } as const;
 
 export const roleValidator = v.union(
   v.literal(ROLES.ADMIN),
   v.literal(ROLES.USER),
   v.literal(ROLES.MEMBER),
+  v.literal(ROLES.MASTER),
 );
 export type Role = Infer<typeof roleValidator>;
 

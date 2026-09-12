@@ -14,6 +14,7 @@ export function useAuth() {
     isLoading,
     isAuthenticated,
     user,
+    isMaster: user?.role === "master",
     signIn,
     signOut,
   };
