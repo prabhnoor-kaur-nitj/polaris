@@ -3,17 +3,16 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useQuery } from "convex/react";
 
 export function useAuth() {
-  const { isLoading: isAuthLoading, isAuthenticated } = useConvexAuth();
+  const { isLoading, isAuthenticated } = useConvexAuth();
   const user = useQuery(api.users.currentUser);
   const { signIn, signOut } = useAuthActions();
 
-  // Derive isLoading directly from the dependencies instead of managing separate state
-  const isLoading = isAuthLoading || user === undefined;
-
+  // isLoading from useConvexAuth already covers the session-resolution window;
+  // currentUser returns undefined while loading and null when signed out.
   return {
     isLoading,
     isAuthenticated,
-    user,
+    user: user ?? null,
     isMaster: user?.role === "master",
     signIn,
     signOut,

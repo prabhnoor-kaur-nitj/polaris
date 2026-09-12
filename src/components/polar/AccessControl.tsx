@@ -1,21 +1,30 @@
 import { Panel, StatusBadge } from "@/components/polar/hud";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
-import type { Doc, Id } from "@/convex/_generated/dataModel";
+import type { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import {
   Check,
   KeyRound,
   Mail,
   ShieldCheck,
+  Trash2,
   TriangleAlert,
   UserPlus,
   Users,
   X,
 } from "lucide-react";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
+
+type GrantableRole = "member" | "user" | "admin";
+
+const ROLE_LABEL: Record<GrantableRole, string> = {
+  member: "OPERATOR",
+  user: "OBSERVER",
+  admin: "SUPERVISOR",
+};
 
 /** Master-only: provision crew credentials and manage who holds portal access. */
 export function AccessControl() {
@@ -23,12 +32,13 @@ export function AccessControl() {
   const isMaster = user?.role === "master";
   const accounts = useQuery(api.access.listAccounts);
   const createCrewAccount = useAction(api.access.createCrewAccount);
-  const setUserRole = useMutation(api.access.setUserRole);
+  const setUserRole = useAction(api.access.setUserRole);
+  const deleteCrewAccount = useAction(api.access.deleteCrewAccount);
 
-  const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"member" | "user">("member");
+  const [role, setRole] = useState<GrantableRole>("member");
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -39,7 +49,7 @@ export function AccessControl() {
           <TriangleAlert className="size-5 shrink-0 text-[#ffd166]" />
           <p className="hud-mono text-[11px] leading-relaxed text-[#9ec8dc]">
             MASTER AUTHORITY REQUIRED — portal access is provisioned exclusively by
-            the station master. Your account holds read-level command duties only.
+            the station master. Your account holds command duties only.
           </p>
         </div>
       </Panel>
@@ -53,8 +63,8 @@ export function AccessControl() {
     try {
       await createCrewAccount({ email, name, password, role });
       toast.success(`Account created: ${email}`);
-      setEmail("");
       setName("");
+      setEmail("");
       setPassword("");
       setRole("member");
     } catch (err) {
@@ -64,12 +74,26 @@ export function AccessControl() {
     }
   }
 
-  async function handleRoleChange(userId: Id<"users">, nextRole: "member" | "user") {
+  async function handleRoleChange(userId: Id<"users">, nextRole: GrantableRole) {
     try {
       await setUserRole({ userId, role: nextRole });
-      toast.success("Role updated.");
+      toast.success("Role updated. Live sessions were refreshed.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Role update failed.");
+    }
+  }
+
+  async function handleDelete(account: { id: Id<"users">; email: string; name: string | null }) {
+    const label = account.name ?? account.email;
+    const confirmed = window.confirm(
+      `Remove ${label} (${account.email}) from the portal? Their sessions terminate immediately.`,
+    );
+    if (!confirmed) return;
+    try {
+      await deleteCrewAccount({ userId: account.id });
+      toast.success(`${label} removed from the portal.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Account removal failed.");
     }
   }
 
@@ -78,7 +102,9 @@ export function AccessControl() {
       <Panel title="Grant Portal Access">
         <form onSubmit={handleCreate} className="space-y-3">
           <div>
-            <label className="hud-label mb-1 block" htmlFor="ac-name">Crew name</label>
+            <label className="hud-label mb-1 block" htmlFor="ac-name">
+              Crew name
+            </label>
             <input
               id="ac-name"
               className="hud-input"
@@ -89,7 +115,9 @@ export function AccessControl() {
             />
           </div>
           <div>
-            <label className="hud-label mb-1 block" htmlFor="ac-email">Email (login ID)</label>
+            <label className="hud-label mb-1 block" htmlFor="ac-email">
+              Email (login ID)
+            </label>
             <input
               id="ac-email"
               className="hud-input"
@@ -102,7 +130,9 @@ export function AccessControl() {
             />
           </div>
           <div>
-            <label className="hud-label mb-1 block" htmlFor="ac-password">Temporary password</label>
+            <label className="hud-label mb-1 block" htmlFor="ac-password">
+              Temporary password
+            </label>
             <input
               id="ac-password"
               className="hud-input"
@@ -117,8 +147,8 @@ export function AccessControl() {
           </div>
           <div>
             <label className="hud-label mb-1 block">Access level</label>
-            <div className="grid grid-cols-2 gap-2">
-              {(["member", "user"] as const).map((r) => (
+            <div className="grid grid-cols-3 gap-2">
+              {(Object.keys(ROLE_LABEL) as GrantableRole[]).map((r) => (
                 <button
                   key={r}
                   type="button"
@@ -130,14 +160,12 @@ export function AccessControl() {
                       : "border-[#48cae4]/20 bg-white/3 text-[#9ec8dc] hover:bg-white/8",
                   )}
                 >
-                  {r === "member" ? "FIELD OPERATOR" : "OBSERVER"}
+                  {ROLE_LABEL[r]}
                 </button>
               ))}
             </div>
           </div>
-          {formError && (
-            <p className="hud-mono text-[11px] text-[#ff8080]">{formError}</p>
-          )}
+          {formError && <p className="hud-mono text-[11px] text-[#ff8080]">{formError}</p>}
           <button
             type="submit"
             disabled={busy}
@@ -197,8 +225,22 @@ export function AccessControl() {
                   </StatusBadge>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <RoleChip active={a.role === "member"} label="OPERATOR" onClick={() => handleRoleChange(a.id, "member")} />
-                    <RoleChip active={a.role === "user"} label="OBSERVER" onClick={() => handleRoleChange(a.id, "user")} />
+                    {(Object.keys(ROLE_LABEL) as GrantableRole[]).map((r) => (
+                      <RoleChip
+                        key={r}
+                        active={a.role === r}
+                        label={ROLE_LABEL[r]}
+                        onClick={() => handleRoleChange(a.id, r)}
+                      />
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(a)}
+                      title={`Remove ${a.name ?? a.email}`}
+                      className="rounded border border-[#ff4d4d]/30 px-1.5 py-1.5 text-[#ff8080] transition-colors hover:bg-[#ff4d4d]/15"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
                   </div>
                 )}
               </li>

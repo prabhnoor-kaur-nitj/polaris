@@ -3,14 +3,16 @@
 // the first master bootstraps the system, then every further account must be
 // created by the master via createCrewAccount.
 
-import { createAccount, getAuthUserId } from "@convex-dev/auth/server";
+import { createAccount, getAuthUserId, invalidateSessions } from "@convex-dev/auth/server";
 import { v } from "convex/values";
-import { api, internal } from "./_generated/api";
-import { action, internalQuery, mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { ROLES } from "./schema";
 
 const PASSWORD_PROVIDER = "password";
 const RESERVE_MASTER_EMAIL = "master@ncpor.gov.in";
+
+const GRANTABLE = v.union(v.literal(ROLES.MEMBER), v.literal(ROLES.USER), v.literal(ROLES.ADMIN));
 
 /* ------------------------------ queries ------------------------------ */
 
@@ -56,18 +58,6 @@ export const listAccounts = query({
   },
 });
 
-/** The signed-in user's role, used by the router guard. */
-export const myRole = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) return null;
-    const me = await ctx.db.get(userId);
-    if (me === null) return null;
-    return { role: me.role ?? null, email: me.email ?? null, name: me.name ?? null };
-  },
-});
-
 /* --------------------------- internal helpers --------------------------- */
 
 /** Role lookup for use inside actions (actions cannot touch ctx.db directly). */
@@ -91,7 +81,42 @@ export const masterExists = internalQuery({
   },
 });
 
-/* ----------------------------- mutations ----------------------------- */
+/** Patch a user's role. Returns whether the role actually changed. */
+export const patchRole = internalMutation({
+  args: { userId: v.id("users"), role: GRANTABLE },
+  handler: async (ctx, { userId, role }) => {
+    const target = await ctx.db.get(userId);
+    if (!target) throw new Error("User not found.");
+    if (target.email === RESERVE_MASTER_EMAIL) {
+      throw new Error("The master account role cannot be changed.");
+    }
+    const changed = (target.role ?? null) !== role;
+    if (changed) await ctx.db.patch(userId, { role });
+    return { changed };
+  },
+});
+
+/** Delete a crew member's auth accounts, sessions and user document. */
+export const deleteUserDocs = internalMutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    for (const account of await ctx.db
+      .query("authAccounts")
+      .withIndex("userIdAndProvider", (q) => q.eq("userId", userId))
+      .collect()) {
+      await ctx.db.delete(account._id);
+    }
+    for (const session of await ctx.db
+      .query("authSessions")
+      .withIndex("userId", (q) => q.eq("userId", userId))
+      .collect()) {
+      await ctx.db.delete(session._id);
+    }
+    await ctx.db.delete(userId);
+  },
+});
+
+/* ----------------------------- actions ----------------------------- */
 
 /** One-time system bootstrap: claims the master seat for the first commander.
  *  Every bootstrap attempt provisions the same reserved master identifier, and
@@ -119,12 +144,7 @@ export const bootstrapMaster = action({
  *  with a role immediately; only the master can create them, so the set of
  *  portal users stays exactly the set the master granted. */
 export const createCrewAccount = action({
-  args: {
-    email: v.string(),
-    name: v.string(),
-    password: v.string(),
-    role: v.union(v.literal(ROLES.MEMBER), v.literal(ROLES.USER)),
-  },
+  args: { email: v.string(), name: v.string(), password: v.string(), role: GRANTABLE },
   handler: async (ctx, { email, name, password, role }) => {
     const userId = await getAuthUserId(ctx);
     const callerRole = await ctx.runQuery(internal.access.getRoleOf, { userId });
@@ -150,20 +170,44 @@ export const createCrewAccount = action({
   },
 });
 
-/** Master-only: grant or change a crew member's role. */
-export const setUserRole = mutation({
-  args: { userId: v.id("users"), role: v.union(v.literal(ROLES.MEMBER), v.literal(ROLES.USER)) },
+/** Master-only: grant or change a crew member's role. A role change also kills
+ *  the member's live sessions so stale sessions cannot outlive their access. */
+export const setUserRole = action({
+  args: { userId: v.id("users"), role: GRANTABLE },
   handler: async (ctx, { userId, role }) => {
     const callerId = await getAuthUserId(ctx);
-    if (callerId === null) throw new Error("UNAUTHENTICATED");
-    const me = await ctx.db.get(callerId);
-    if (me?.role !== ROLES.MASTER) throw new Error("FORBIDDEN: master access required");
-    const target = await ctx.db.get(userId);
-    if (!target) throw new Error("User not found.");
-    if (target.email === RESERVE_MASTER_EMAIL) {
-      throw new Error("The master account role cannot be changed.");
+    const callerRole = await ctx.runQuery(internal.access.getRoleOf, { userId: callerId });
+    if (callerRole !== ROLES.MASTER) {
+      throw new Error("FORBIDDEN: master access required");
     }
-    await ctx.db.patch(userId, { role });
+    const result = await ctx.runMutation(internal.access.patchRole, { userId, role });
+    if (result.changed) {
+      await invalidateSessions(ctx, { userId });
+    }
+    return { success: true as const };
+  },
+});
+
+/** Master-only: fully remove a crew member — live sessions, auth account and
+ *  user document. The master seat itself can never be deleted. */
+export const deleteCrewAccount = action({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    const callerId = await getAuthUserId(ctx);
+    const callerRole = await ctx.runQuery(internal.access.getRoleOf, { userId: callerId });
+    if (callerRole !== ROLES.MASTER) {
+      throw new Error("FORBIDDEN: master access required");
+    }
+    if (callerId !== null && userId === callerId) {
+      throw new Error("The master cannot delete their own account.");
+    }
+    const targetRole = await ctx.runQuery(internal.access.getRoleOf, { userId });
+    if (targetRole === ROLES.MASTER) {
+      throw new Error("The master account cannot be deleted.");
+    }
+    // Kill live sessions first while they still exist, then remove the docs.
+    await invalidateSessions(ctx, { userId });
+    await ctx.runMutation(internal.access.deleteUserDocs, { userId });
     return { success: true as const };
   },
 });
