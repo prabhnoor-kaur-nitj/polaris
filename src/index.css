@@ -1,0 +1,378 @@
+/* DO NOT CHANGE */
+@import "tailwindcss";
+@import "tw-animate-css";
+@custom-variant dark (&:is(.dark *));
+
+/* DO NOT CHANGE */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-output: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-output: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-ice: var(--ice);
+  --color-ice-bright: var(---ice-bright);
+  --color-ice-dim: var(--ice-dim);
+  --color-deep: var(--deep);
+  --color-deep-2: var(--deep-2);
+  --color-panel: var(--panel);
+  --color-alert: var(--alert);
+  --color-sync: var(--sync);
+  --color-warn: var(--warn);
+}
+
+/* CHANGE VALUES FOR THEME */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Polar tactical palette (used by .polar-hud scope) */
+  --ice: #48cae4;
+  --ice-bright: #7be6fa;
+  --ice-dim: #00b4d8;
+  --deep: #0b132b;
+  --deep-2: #1c2541;
+  --panel: #0e1830;
+  --alert: #ff4d4d;
+  --sync: #00f5d4;
+  --warn: #ffb703;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  button:not([disabled]),
+  [role="button"]:not([disabled]) {
+    cursor: pointer;
+  }
+}
+
+/* ===== Polar HUD scope (self-contained, does not touch template tokens) ===== */
+.polar-hud {
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(72, 202, 228, 0.1), transparent 60%),
+    radial-gradient(900px 500px at 0% 110%, rgba(0, 180, 216, 0.08), transparent 55%),
+    linear-gradient(160deg, #0b132b 0%, #101b3d 55%, #0b132b 100%);
+  color: #d7f4ff;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+.polar-hud .hud-mono {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+.polar-hud .hud-panel {
+  position: relative;
+  background: linear-gradient(180deg, rgba(28, 37, 65, 0.55), rgba(14, 24, 48, 0.65));
+  border: 1px solid rgba(72, 202, 228, 0.18);
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(123, 230, 250, 0.08),
+    0 18px 40px -24px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.polar-hud .hud-panel::before {
+  content: "";
+  position: absolute;
+  inset-inline: 12px;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(72, 202, 228, 0.55), transparent);
+}
+
+.polar-hud .hud-panel-hover {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+.polar-hud .hud-panel-hover:hover {
+  border-color: rgba(72, 202, 228, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(123, 230, 250, 0.12),
+    0 0 0 1px rgba(72, 202, 228, 0.12),
+    0 24px 48px -28px rgba(0, 0, 0, 0.95),
+    0 0 34px -12px rgba(0, 180, 216, 0.35);
+}
+
+.polar-hud .hud-label {
+  color: rgba(158, 200, 220, 0.75);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.polar-hud .hud-input {
+  width: 100%;
+  background: rgba(11, 19, 43, 0.7);
+  border: 1px solid rgba(72, 202, 228, 0.22);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  color: #d7f4ff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.polar-hud .hud-input::placeholder {
+  color: rgba(158, 200, 220, 0.4);
+}
+.polar-hud .hud-input:focus {
+  border-color: rgba(72, 202, 228, 0.65);
+  box-shadow: 0 0 0 3px rgba(72, 202, 228, 0.15);
+}
+.polar-hud select.hud-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2348cae4' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+.polar-hud .hud-range {
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(72, 202, 228, 0.35), rgba(11, 19, 43, 0.9));
+  border: 1px solid rgba(72, 202, 228, 0.2);
+  outline: none;
+}
+.polar-hud .hud-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #48cae4;
+  border: 2px solid #0b132b;
+  box-shadow: 0 0 10px rgba(72, 202, 228, 0.7);
+  cursor: pointer;
+}
+.polar-hud .hud-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #48cae4;
+  border: 2px solid #0b132b;
+  box-shadow: 0 0 10px rgba(72, 202, 228, 0.7);
+  cursor: pointer;
+}
+
+/* ===== Keyframes ===== */
+@keyframes radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ping-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes sos-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.55), 0 0 24px rgba(255, 77, 77, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(255, 77, 77, 0), 0 0 44px rgba(255, 77, 77, 0.75);
+  }
+}
+
+@keyframes sos-alert-in {
+  0% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes alert-flash {
+  0%,
+  100% {
+    opacity: 0.12;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(700%);
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes route-dash {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+/* ===== Animation utility classes ===== */
+.polar-hud .anim-radar {
+  animation: radar-sweep 4s linear infinite;
+}
+.polar-hud .anim-ping {
+  animation: ping-ring 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.polar-hud .anim-sos {
+  animation: sos-pulse 1.6s ease-in-out infinite;
+}
+.polar-hud .anim-sos-in {
+  animation: sos-alert-in 0.3s ease-out both;
+}
+.polar-hud .anim-flash {
+  animation: alert-flash 1.4s ease-in-out infinite;
+}
+.polar-hud .anim-scan {
+  animation: scanline 5.5s linear infinite;
+}
+.polar-hud .anim-blink {
+  animation: blink 1.4s ease-in-out infinite;
+}
+.polar-hud .anim-route {
+  stroke-dasharray: 8 6;
+  animation: route-dash 1.2s linear infinite;
+}
+
+/* Reduced motion: kill decorative loops */
+@media (prefers-reduced-motion: reduce) {
+  .polar-hud .anim-radar,
+  .polar-hud .anim-ping,
+  .polar-hud .anim-sos,
+  .polar-hud .anim-flash,
+  .polar-hud .anim-scan,
+  .polar-hud .anim-blink,
+  .polar-hud .anim-route {
+    animation: none;
+  }
+}
