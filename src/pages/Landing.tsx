@@ -5,7 +5,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { SiteLayout } from "@/components/site/SiteChrome";
-import { GlowingStarsBackgroundCardPreview } from "@/components/glows/GlowingStarsBackgroundCardPreview";
+import { GlowingStarsBackdrop } from "@/components/ui/glowing-stars";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
@@ -126,7 +126,10 @@ export default function Landing() {
   return (
     <SiteLayout>
       {/* ——— Opening ——— */}
-      <section className="mx-auto max-w-5xl px-5 pt-16 pb-14 sm:pt-24">
+      <section className="relative overflow-hidden">
+        {/* Star field behind the opening spread (decorative) */}
+        <GlowingStarsBackdrop className="absolute inset-0" />
+        <div className="relative mx-auto max-w-5xl px-5 pt-16 pb-14 sm:pt-24">
         <div className="fm-rise grid gap-12 lg:grid-cols-[1fr_260px]">
           <div>
             <p className="fm-label">Operations manual · Revision 4.2</p>
@@ -175,6 +178,7 @@ export default function Landing() {
         </div>
 
         <hr className="fm-rule mt-16" />
+        </div>
       </section>
 
       {/* ——— §01 Systems ——— */}
@@ -281,7 +285,6 @@ export default function Landing() {
             </p>
           </div>
           <div className="flex flex-col justify-center gap-3">
-            <GlowingStarsBackgroundCardPreview />
             <Link to="/auth" className="fm-btn fm-btn-solid justify-center">
               Enter command
             </Link>

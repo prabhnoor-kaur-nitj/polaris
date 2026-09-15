@@ -156,3 +156,70 @@ const Glow = ({ delay }: { delay: number }) => {
     />
   );
 };
+
+function pickRandomStars(count: number, pool: number) {
+  return Array.from({ length: count }, () => Math.floor(Math.random() * pool));
+}
+
+/**
+ * Full-bleed variant of the star field: fills its positioned parent and sits
+ * behind page content (decorative, pointer-events none). Twinkles a few stars
+ * at a time; static under prefers-reduced-motion.
+ */
+export const GlowingStarsBackdrop = ({
+  className,
+  columns = 28,
+  rows = 14,
+  glowingCount = 8,
+}: {
+  className?: string;
+  columns?: number;
+  rows?: number;
+  glowingCount?: number;
+}) => {
+  const total = columns * rows;
+  const [glowingStars, setGlowingStars] = useState<number[]>(() =>
+    pickRandomStars(glowingCount, total),
+  );
+
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(
+      () => setGlowingStars(pickRandomStars(glowingCount, total)),
+      3000,
+    );
+    return () => window.clearInterval(id);
+  }, [glowingCount, total]);
+
+  return (
+    <div
+      aria-hidden
+      className={cn("pointer-events-none select-none overflow-hidden", className)}
+    >
+      <div
+        className="h-full w-full p-1"
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${columns}, 1fr)`,
+          gridTemplateRows: `repeat(${rows}, 1fr)`,
+        }}
+      >
+        {[...Array(total)].map((_, starIdx) => {
+          const isGlowing = glowingStars.includes(starIdx);
+          const delay = (starIdx % 10) * 0.1;
+          return (
+            <div
+              key={`backdrop-star-${starIdx}`}
+              className="relative flex items-center justify-center"
+            >
+              <Star isGlowing={isGlowing} delay={delay} />
+              <AnimatePresence mode="wait">
+                {isGlowing && <Glow delay={delay} />}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
