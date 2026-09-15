@@ -184,7 +184,7 @@ export const GlowingStarsBackdrop = ({
   columns = 24,
   rows = 12,
   glowingCount = 6,
-  radiusPct = 0.11, // cursor cluster radius, fraction of container height
+  radiusPct = 0.16, // cursor cluster radius, fraction of container height
 }: {
   className?: string;
   columns?: number;
@@ -195,7 +195,6 @@ export const GlowingStarsBackdrop = ({
   const total = columns * rows;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const frame = useRef<number | null>(null);
-  const [fieldGlow, setFieldGlow] = useState(false);
   const [cursor, setCursor] = useState<CursorSample | null>(null);
   const [ambient, setAmbient] = useState<number[]>([]);
 
@@ -228,9 +227,11 @@ export const GlowingStarsBackdrop = ({
           e.clientX <= r.right &&
           e.clientY >= r.top &&
           e.clientY <= r.bottom;
-        setFieldGlow(inside);
         if (inside) {
           setCursor({ x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height });
+        } else if (cursor) {
+          // Left the section — drop the cluster (null only once, on the way out).
+          setCursor(null);
         }
       });
     };
@@ -240,6 +241,8 @@ export const GlowingStarsBackdrop = ({
       document.removeEventListener("pointermove", onMove);
       if (frame.current != null) window.cancelAnimationFrame(frame.current);
     };
+    // `cursor` read only to avoid redundant state writes on exit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* Stars near the cursor glow as a trailing cluster (aspect-corrected). */
@@ -275,14 +278,11 @@ export const GlowingStarsBackdrop = ({
         {[...Array(total)].map((_, starIdx) => {
           const cursorDist = cursorSet.get(starIdx);
           const isGlowing =
-            fieldGlow || cursorDist !== undefined || ambient.includes(starIdx);
-          const delay = fieldGlow
-            ? // full-field sweep: staggered by diagonal so it rolls across the hero
-              (starIdx % columns) * 0.006 + Math.floor(starIdx / columns) * 0.004
-            : cursorDist !== undefined
-              ? // cluster: nearest stars wake first
-                cursorDist * 0.9
-              : (starIdx % 10) * 0.1;
+            cursorDist !== undefined || ambient.includes(starIdx);
+          const delay = cursorDist !== undefined
+            ? // cluster: nearest stars wake first
+              cursorDist * 0.9
+            : (starIdx % 10) * 0.1;
           return (
             <div
               key={`backdrop-star-${starIdx}`}
