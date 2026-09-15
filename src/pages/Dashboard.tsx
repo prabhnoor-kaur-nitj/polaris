@@ -1,4 +1,6 @@
 import { AccessControl } from "@/components/polar/AccessControl";
+import { SiteAnalytics } from "@/components/site/SiteAnalytics";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { MarkerInspector } from "@/components/polar/MarkerInspector";
 import { InventoryTab } from "@/components/polar/InventoryTab";
 import { RoutePlannerTab } from "@/components/polar/RoutePlannerTab";
@@ -10,6 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePolarStore } from "@/lib/polar/store";
 import { cn } from "@/lib/utils";
 import {
+  BarChart3,
   Map,
   Package,
   Route as RouteIcon,
@@ -19,16 +22,18 @@ import {
 import { useNavigate } from "react-router";
 import { useState } from "react";
 
-type TabId = "map" | "inventory" | "routes" | "access";
+type TabId = "map" | "inventory" | "routes" | "access" | "site";
 
 const TABS: { id: TabId; label: string; icon: typeof Map }[] = [
   { id: "map", label: "TACTICAL MAP & PERSONNEL RADAR", icon: Map },
   { id: "inventory", label: "INVENTORY & SUPPLY NODE", icon: Package },
   { id: "routes", label: "EXPEDITION & ROUTE PLANNING", icon: RouteIcon },
   { id: "access", label: "ACCESS CONTROL", icon: ShieldCheck },
+  { id: "site", label: "SITE ANALYTICS", icon: BarChart3 },
 ];
 
 export default function Dashboard() {
+  usePageTitle("Command Deck");
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const store = usePolarStore();
@@ -123,6 +128,7 @@ export default function Dashboard() {
           {tab === "inventory" && <InventoryTab store={store} />}
           {tab === "routes" && <RoutePlannerTab store={store} />}
           {tab === "access" && <AccessControl />}
+          {tab === "site" && <SiteAnalytics />}
         </div>
 
         <footer className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-[#48cae4]/10 pt-3">

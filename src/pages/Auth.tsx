@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { api } from "@/convex/_generated/api";
 import logo from "@/assets/logo.svg";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ function resolveRedirectAfterAuth(returnTo: string | null, fallback = "/dashboar
 }
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
+  usePageTitle("Command Sign-In");
   const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -125,7 +127,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             <>
               <CardHeader className="text-center">
                 <div className="flex justify-center">
-                  <img src={logo} alt="POLARIS" width={64} height={64} className="mb-4 mt-4 rounded-lg" />
+                  <img src={logo} alt="POLARIS expedition command logo" width={64} height={64} className="mb-4 mt-4 rounded-lg" />
                 </div>
                 <CardTitle className="flex items-center justify-center gap-2 text-xl">
                   <ShieldCheck className="size-5 text-[#00f5d4]" /> Initialize Command System
@@ -215,7 +217,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 <div className="flex justify-center">
                   <img
                     src={logo}
-                    alt="POLARIS"
+                    alt="POLARIS expedition command logo"
                     width={64}
                     height={64}
                     className="mb-4 mt-4 cursor-pointer rounded-lg"
