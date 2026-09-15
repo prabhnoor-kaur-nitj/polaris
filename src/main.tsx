@@ -22,8 +22,8 @@ const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 // Simple loading fallback for route transitions
 function RouteLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-pulse text-muted-foreground">Loading...</div>
+    <div className="fm flex min-h-screen items-center justify-center">
+      <span className="fm-label animate-pulse">Charting route…</span>
     </div>
   );
 }
@@ -65,14 +65,14 @@ class RootErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-6">
-          <div className="max-w-lg text-center">
-            <p className="text-sm font-semibold">Preview runtime error</p>
-            <p className="mt-2 text-xs text-muted-foreground break-words">
+        <div className="fm flex min-h-screen items-center justify-center p-6">
+          <div className="fm-panel max-w-lg p-6">
+            <p className="fm-label">System fault · Runtime</p>
+            <p className="fm-mono mt-3 break-words text-[13px] text-[var(--fm-ink)]">
               {this.state.message}
             </p>
             {this.state.stack && (
-              <pre className="mt-3 text-left text-[10px] leading-4 text-muted-foreground/80 max-h-40 overflow-auto rounded border border-border/60 p-2">
+              <pre className="fm-mono mt-3 max-h-40 overflow-auto rounded border border-[var(--fm-line)] p-2 text-left text-[10px] leading-4 text-[var(--fm-mut)]">
                 {this.state.stack}
               </pre>
             )}

@@ -1,6 +1,6 @@
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, ShieldX } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router";
 
@@ -16,9 +16,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </main>
+      <div className="fm flex min-h-screen items-center justify-center">
+        <Loader2 className="size-5 animate-spin text-[var(--fm-mut)]" />
+      </div>
     );
   }
 
@@ -45,35 +45,42 @@ function AccessPending({ email }: { email: string | null }) {
   const { signOut } = useAuth();
 
   return (
-    <main className="polar-hud dark flex min-h-screen flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-10 text-center">
-        <span className="grid size-16 place-items-center rounded-2xl border border-[#ffb703]/40 bg-[#ffb703]/10">
-          <ShieldX className="size-8 text-[#ffd166]" />
-        </span>
-        <div className="max-w-md space-y-2">
-          <h1 className="hud-mono text-lg font-bold tracking-[0.14em] text-[#d7f4ff]">
-            ACCESS PENDING
-          </h1>
-          <p className="text-sm leading-relaxed text-[#9ec8dc]">
-            Your credentials are valid, but the station master has not granted this
-            account access to the command portal yet
-            {email ? (
-              <>
-                {" "}
-                (<span className="hud-mono text-[#7be6fa]">{email}</span>)
-              </>
-            ) : null}
-            . Contact the master commander to be provisioned, then sign in again.
-          </p>
+    <div className="fm flex min-h-screen flex-col">
+      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-5 py-16">
+        <p className="fm-label fm-rise">Access · Awaiting provisioning</p>
+        <h1 className="fm-h1 fm-rise mt-5">
+          Credentials valid.{" "}
+          <em className="fm-serif italic text-[var(--fm-accent)]">
+            Clearance pending.
+          </em>
+        </h1>
+        <p className="fm-body fm-rise mt-5 max-w-lg text-[15px] leading-relaxed">
+          This account signs in, but the station master has not issued it a portal
+          role yet{email ? (
+            <>
+              {" "}
+              (<span className="fm-mono text-[var(--fm-accent)]">{email}</span>)
+            </>
+          ) : null}
+          . The master provisions access from the Access Control panel on the command
+          deck — ask them to add this email, then sign in again.
+        </p>
+
+        <div className="mt-10 border-t border-[var(--fm-line)] pt-6">
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="fm-btn fm-btn-quiet"
+          >
+            Sign out
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => void signOut()}
-          className="hud-mono rounded-md border border-white/15 bg-white/5 px-4 py-2 text-[10px] font-bold tracking-[0.18em] text-[#9ec8dc] transition-colors hover:bg-white/10"
-        >
-          SIGN OUT
-        </button>
+
+        <p className="fm-serif mt-8 text-[13px] italic text-[var(--fm-mut)]">
+          Field manual, appendix A — the roster is short and known. No account is
+          granted without the master's word.
+        </p>
       </div>
-    </main>
+    </div>
   );
 }
