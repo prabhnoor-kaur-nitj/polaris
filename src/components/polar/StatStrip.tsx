@@ -26,38 +26,26 @@ function StatCard({
   pulse?: boolean;
 }) {
   const toneText: Record<string, string> = {
-    ice: "text-[#7be6fa]",
-    alert: "text-[#ff8080]",
-    sync: "text-[#00f5d4]",
-    warn: "text-[#ffd166]",
-  };
-  const toneRing: Record<string, string> = {
-    ice: "border-[#48cae4]/25 bg-[#48cae4]/8",
-    alert: "border-[#ff4d4d]/35 bg-[#ff4d4d]/8",
-    sync: "border-[#00f5d4]/25 bg-[#00f5d4]/8",
-    warn: "border-[#ffb703]/25 bg-[#ffb703]/8",
+    ice: "text-[var(--fm-accent)]",
+    alert: "text-[var(--fm-alert)]",
+    sync: "text-[var(--fm-good)]",
+    warn: "text-[var(--fm-warn)]",
   };
 
   return (
     <div
       className={cn(
-        "hud-panel flex items-center gap-3 px-3.5 py-3",
-        pulse && "anim-flash ring-1 ring-[#ff4d4d]/40",
+        "fm-panel flex items-center gap-3 px-3.5 py-3",
+        pulse && "fm-blink",
       )}
     >
-      <span
-        className={cn(
-          "grid size-9 shrink-0 place-items-center rounded-lg border",
-          toneRing[tone],
-          pulse && "anim-blink",
-        )}
-      >
+      <span className="fm-plate size-9 shrink-0">
         <Icon className={cn("size-4", toneText[tone])} />
       </span>
       <div className="min-w-0 leading-tight">
-        <div className="hud-label truncate">{label}</div>
-        <div className={cn("hud-mono text-lg font-bold tabular-nums", toneText[tone])}>{value}</div>
-        <div className="hud-mono truncate text-[10px] text-[#9ec8dc]/80">{sub}</div>
+        <div className="fm-label truncate">{label}</div>
+        <div className={cn("fm-mono text-lg font-bold tabular-nums", toneText[tone])}>{value}</div>
+        <div className="fm-dim fm-mono truncate text-[10px]">{sub}</div>
       </div>
     </div>
   );

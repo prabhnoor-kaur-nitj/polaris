@@ -52,24 +52,17 @@ export function MarkerInspector({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       {person && selection?.kind === "personnel" && (
-        <DialogContent className="polar-hud max-w-md border-[#48cae4]/30 bg-[#0b132b] text-[#d7f4ff]" showCloseButton>
+        <DialogContent className="fm max-w-md border-[var(--fm-line)] bg-[var(--fm-paper)] p-6 text-[var(--fm-ink)]" showCloseButton>
           <DialogHeader>
             <div className="flex items-center gap-2.5">
-              <span
-                className={cn(
-                  "grid size-10 place-items-center rounded-lg border",
-                  person.status === "DISTRESS"
-                    ? "border-[#ff4d4d]/50 bg-[#ff4d4d]/10 text-[#ff4d4d]"
-                    : "border-[#48cae4]/40 bg-[#48cae4]/10 text-[#48cae4]",
-                )}
-              >
-                <User className="size-5" />
+              <span className="fm-plate size-10">
+                <User className="size-5 text-[var(--fm-accent)]" />
               </span>
               <div>
-                <DialogTitle className="hud-mono text-base font-bold tracking-[0.12em] text-[#d7f4ff]">
+                <DialogTitle className="fm-mono text-base font-bold tracking-[0.12em] text-[var(--fm-ink)]">
                   {person.callsign} · {person.name.toUpperCase()}
                 </DialogTitle>
-                <DialogDescription className="hud-mono text-[11px] text-[#9ec8dc]">
+                <DialogDescription className="fm-mono text-[11px] text-[var(--fm-mut)]">
                   {person.role} · GRID {fmtCoord(person.pos.x)}E {fmtCoord(person.pos.y)}S
                 </DialogDescription>
               </div>
@@ -89,7 +82,7 @@ export function MarkerInspector({
           </div>
 
           {/* Telemetry grid */}
-          <div className="hud-panel grid grid-cols-2 gap-x-4 gap-y-2.5 p-3">
+          <div className="fm-panel-2 grid grid-cols-2 gap-x-4 gap-y-2.5 p-3">
             <Telemetry icon={Clock} label="Last Ping" value={`${fmtRel(person.lastPing)} · ${fmtUtc(person.lastPing)}Z`} />
             <Telemetry icon={Radio} label="Link" value={store.state.networkMode === "offline" ? "LOCAL STORE" : store.state.networkMode === "lowband" ? "VHF MESH" : "SATCOM"} />
             <Telemetry icon={Gauge} label="Grid X" value={`${fmtCoord(person.pos.x)}E`} />
@@ -104,55 +97,55 @@ export function MarkerInspector({
                 type="button"
                 onClick={() => store.setPersonnelStatus(person.id, s)}
                 disabled={person.status === s}
-                className="hud-mono rounded-md border border-[#48cae4]/30 bg-[#48cae4]/8 px-2.5 py-1.5 text-[10px] font-bold tracking-[0.14em] text-[#7be6fa] transition-colors hover:bg-[#48cae4]/20 disabled:opacity-40"
+                className="fm-btn fm-btn-quiet fm-btn-sm disabled:opacity-40"
               >
-                SET {s}
+                {s}
               </button>
             ))}
             {person.status === "DISTRESS" ? (
               <button
                 type="button"
                 onClick={() => store.resolveSos(person.id)}
-                className="hud-mono ml-auto rounded-md border border-[#00f5d4]/40 bg-[#00f5d4]/10 px-3 py-1.5 text-[10px] font-bold tracking-[0.14em] text-[#00f5d4] hover:bg-[#00f5d4]/20"
+                className="fm-btn fm-btn-good fm-btn-sm ml-auto"
               >
-                RESOLVE SOS
+                Resolve SOS
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => store.raiseSos(person.id)}
-                className="hud-mono anim-sos ml-auto rounded-md border border-[#ff4d4d]/60 bg-[#ff4d4d]/15 px-3 py-1.5 text-[10px] font-bold tracking-[0.14em] text-[#ff8080] hover:bg-[#ff4d4d]/25"
+                className="fm-btn fm-btn-alert fm-btn-sm ml-auto"
               >
-                <ShieldAlert className="mr-1 inline size-3.5" />
-                DECLARE SOS
+                <ShieldAlert className="size-3.5" />
+                SOS
               </button>
             )}
           </div>
 
-          <p className="hud-mono text-[9px] tracking-[0.1em] text-[#9ec8dc]/60">
-            EDITS WRITE TO LOCAL STORE FIRST{store.state.networkMode === "offline" ? " · QUEUED FOR SYNC" : " · SYNC ENGINE ACTIVE"}
+          <p className="fm-mono text-[9px] tracking-[0.1em] text-[var(--fm-mut)] uppercase">
+            Edits write to local store first{store.state.networkMode === "offline" ? " · queued for sync" : " · sync engine active"}
           </p>
         </DialogContent>
       )}
 
       {vehicle && (
-        <DialogContent className="polar-hud max-w-md border-[#48cae4]/30 bg-[#0b132b] text-[#d7f4ff]" showCloseButton>
+        <DialogContent className="fm max-w-md border-[var(--fm-line)] bg-[var(--fm-paper)] p-6 text-[var(--fm-ink)]" showCloseButton>
           <DialogHeader>
             <div className="flex items-center gap-2.5">
-              <span className="grid size-10 place-items-center rounded-lg border border-[#48cae4]/40 bg-[#48cae4]/10 text-[#48cae4]">
-                <Wrench className="size-5" />
+              <span className="fm-plate size-10">
+                <Wrench className="size-5 text-[var(--fm-accent)]" />
               </span>
               <div>
-                <DialogTitle className="hud-mono text-base font-bold tracking-[0.12em] text-[#d7f4ff]">
+                <DialogTitle className="fm-mono text-base font-bold tracking-[0.12em] text-[var(--fm-ink)]">
                   {vehicle.name.toUpperCase()}
                 </DialogTitle>
-                <DialogDescription className="hud-mono text-[11px] text-[#9ec8dc]">
+                <DialogDescription className="fm-mono text-[11px] text-[var(--fm-mut)]">
                   {vehicle.type} · GRID {fmtCoord(vehicle.pos.x)}E {fmtCoord(vehicle.pos.y)}S
                 </DialogDescription>
               </div>
               <span className="ml-auto">
                 <StatusBadge tone={vehicle.available ? "sync" : "muted"}>
-                  {vehicle.available ? "READY" : "DOWN"}
+                  {vehicle.available ? "Ready" : "Down"}
                 </StatusBadge>
               </span>
             </div>
@@ -162,7 +155,7 @@ export function MarkerInspector({
             <Meter label="Fuel" value={vehicle.fuel} />
           </div>
 
-          <div className="hud-panel grid grid-cols-2 gap-x-4 gap-y-2.5 p-3">
+          <div className="fm-panel-2 grid grid-cols-2 gap-x-4 gap-y-2.5 p-3">
             <Telemetry icon={Gauge} label="Cruise" value={`${vehicle.speedKmh} KM/H`} />
             <Telemetry icon={Clock} label="Range" value={`${Math.round(vehicle.fuel * 4.2)} KM EST`} />
             <Telemetry icon={Thermometer} label="Block Heater" value={vehicle.available ? "CYCLING" : "FAULT"} />
@@ -173,19 +166,19 @@ export function MarkerInspector({
             <button
               type="button"
               onClick={() => store.moveAsset("vehicle", vehicle.id, vehicle.pos)}
-              className="hud-mono rounded-md border border-[#48cae4]/30 bg-[#48cae4]/8 px-2.5 py-1.5 text-[10px] font-bold tracking-[0.14em] text-[#7be6fa] hover:bg-[#48cae4]/20"
+              className="fm-btn fm-btn-quiet fm-btn-sm"
             >
-              REPOSITION VIA MAP DRAG
+              Reposition via map drag
             </button>
             <span className="ml-auto">
               <StatusBadge tone="ice">
-                <Flame className="size-3" /> ARCTIC SPEC
+                <Flame className="size-3" /> Arctic spec
               </StatusBadge>
             </span>
           </div>
 
-          <p className="hud-mono text-[9px] tracking-[0.1em] text-[#9ec8dc]/60">
-            FLEET NODE · TELEMETRY FROM LOCAL BUFFER
+          <p className="fm-mono text-[9px] tracking-[0.1em] text-[var(--fm-mut)] uppercase">
+            Fleet node · telemetry from local buffer
           </p>
         </DialogContent>
       )}
@@ -204,10 +197,10 @@ function Telemetry({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <Icon className="size-3.5 shrink-0 text-[#48cae4]/70" />
+      <Icon className="size-3.5 shrink-0 text-[var(--fm-mut)]" />
       <div className="min-w-0 leading-tight">
-        <div className="hud-label">{label}</div>
-        <div className="hud-mono truncate text-[11px] font-semibold text-[#d7f4ff]">{value}</div>
+        <div className="fm-label">{label}</div>
+        <div className="fm-mono truncate text-[11px] font-semibold text-[var(--fm-ink)]">{value}</div>
       </div>
     </div>
   );

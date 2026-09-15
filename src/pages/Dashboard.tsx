@@ -24,12 +24,12 @@ import { useState } from "react";
 
 type TabId = "map" | "inventory" | "routes" | "access" | "site";
 
-const TABS: { id: TabId; label: string; icon: typeof Map }[] = [
-  { id: "map", label: "TACTICAL MAP & PERSONNEL RADAR", icon: Map },
-  { id: "inventory", label: "INVENTORY & SUPPLY NODE", icon: Package },
-  { id: "routes", label: "EXPEDITION & ROUTE PLANNING", icon: RouteIcon },
-  { id: "access", label: "ACCESS CONTROL", icon: ShieldCheck },
-  { id: "site", label: "CONTACT INBOX", icon: Inbox },
+const TABS: { id: TabId; label: string; num: string; icon: typeof Map }[] = [
+  { id: "map", num: "01", label: "Tactical map & personnel radar", icon: Map },
+  { id: "inventory", num: "02", label: "Inventory & supply node", icon: Package },
+  { id: "routes", num: "03", label: "Expedition & route planning", icon: RouteIcon },
+  { id: "access", num: "04", label: "Access control", icon: ShieldCheck },
+  { id: "site", num: "05", label: "Contact inbox", icon: Inbox },
 ];
 
 export default function Dashboard() {
@@ -65,32 +65,47 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="polar-hud min-h-screen">
+    <div className="fm min-h-screen">
       <TacticalTopbar store={store} onSignOut={handleSignOut} />
 
-      <main className="mx-auto w-full max-w-7xl px-3 pt-4 pb-24 sm:px-5">
-        <StatStrip store={store} />
+      <main className="mx-auto w-full max-w-7xl px-4 pt-5 pb-24 sm:px-6">
+        <div className="flex items-baseline justify-between gap-4">
+          <h1 className="fm-h2">
+            <span className="fm-num mr-3">Deck</span>Station command
+          </h1>
+          <span className="fm-dim fm-mono hidden text-[10px] tracking-[0.18em] uppercase sm:inline">
+            Winter-over cycle 42
+          </span>
+        </div>
+
+        <div className="mt-5">
+          <StatStrip store={store} />
+        </div>
 
         {/* Primary ops tabs + SOS trigger */}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <div className="hud-panel flex flex-wrap gap-1 p-1">
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="fm-panel flex flex-wrap gap-0.5 p-1" role="tablist" aria-label="Command sections">
             {TABS.map((t) => {
               const Icon = t.icon;
+              const active = tab === t.id;
               return (
                 <button
                   key={t.id}
                   type="button"
+                  role="tab"
+                  aria-selected={active}
                   onClick={() => setTab(t.id)}
                   className={cn(
-                    "hud-mono flex items-center gap-2 rounded-md px-3.5 py-2 text-[10px] font-bold tracking-[0.14em] transition-colors",
-                    tab === t.id
-                      ? "bg-[#48cae4]/15 text-[#7be6fa] shadow-[inset_0_0_0_1px_rgba(72,202,228,0.4)]"
-                      : "text-[#9ec8dc] hover:bg-white/5 hover:text-[#d7f4ff]",
+                    "fm-mono flex items-center gap-2 rounded-sm px-3.5 py-2 text-[10px] font-medium tracking-[0.14em] uppercase transition-colors",
+                    active
+                      ? "bg-[var(--fm-paper-2)] text-[var(--fm-ink)] shadow-[inset_0_0_0_1px_var(--fm-line)]"
+                      : "text-[var(--fm-mut)] hover:text-[var(--fm-ink)]",
                   )}
                 >
                   <Icon className="size-3.5" />
-                  <span className="hidden sm:inline">{t.label}</span>
-                  <span className="sm:hidden">{t.id.toUpperCase()}</span>
+                  <span className="fm-num mr-1 text-[10px]">{t.num}</span>
+                  <span className="hidden md:inline">{t.label}</span>
+                  <span className="md:hidden">{t.id.toUpperCase()}</span>
                 </button>
               );
             })}
@@ -100,17 +115,15 @@ export default function Dashboard() {
             type="button"
             onClick={triggerSos}
             className={cn(
-              "anim-sos hud-mono ml-auto flex items-center gap-2 rounded-lg border-2 px-4 py-2.5 text-[11px] font-bold tracking-[0.18em] transition-colors",
-              hasActiveSos
-                ? "border-[#ff4d4d] bg-[#ff4d4d]/20 text-[#ff8080]"
-                : "border-[#ff4d4d]/60 bg-[#ff4d4d]/10 text-[#ff4d4d] hover:bg-[#ff4d4d]/20",
+              "fm-btn fm-btn-alert fm-mono ml-auto",
+              hasActiveSos && "fm-blink",
             )}
             title="Declare expedition emergency (simulated drill)"
           >
-            <Siren className="size-4" />
-            SOS ALERT
+            <Siren className="size-3.5" />
+            SOS
             {distressCount > 0 && (
-              <span className="rounded bg-[#ff4d4d] px-1.5 text-[9px] text-[#0b132b]">
+              <span className="fm-mono rounded-sm border border-[var(--fm-alert)]/50 px-1.5 text-[9px]">
                 {distressCount}
               </span>
             )}
@@ -131,12 +144,12 @@ export default function Dashboard() {
           {tab === "site" && <ContactInbox />}
         </div>
 
-        <footer className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-[#48cae4]/10 pt-3">
-          <span className="hud-mono text-[9px] tracking-[0.18em] text-[#9ec8dc]/50">
-            POLARIS · EXPEDITION COMMAND · SIMULATED FIELD BUILD
+        <footer className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--fm-line-soft)] pt-3">
+          <span className="fm-mono text-[9px] tracking-[0.18em] text-[var(--fm-mut)] uppercase">
+            POLARIS · Expedition command · Simulated field build
           </span>
-          <span className="hud-mono text-[9px] tracking-[0.18em] text-[#9ec8dc]/50">
-            ENGINE v4.2 · LOCAL-FIRST · SECTOR 70S
+          <span className="fm-mono text-[9px] tracking-[0.18em] text-[var(--fm-mut)] uppercase">
+            Engine v4.2 · Local-first · Sector 70S
           </span>
         </footer>
       </main>

@@ -39,23 +39,19 @@ export function SosOverlay({
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-      {/* flashing backdrop */}
-      <div className="anim-flash absolute inset-0 bg-[#ff4d4d]/20 backdrop-blur-sm" />
-      <div className="absolute inset-0 bg-[#0b132b]/80" />
+      <div className="absolute inset-0 bg-[#0d1015]/85" />
 
-      <div className="anim-sos-in relative w-full max-w-2xl overflow-hidden rounded-2xl border-2 border-[#ff4d4d]/60 bg-[#0b132b] shadow-[0_0_80px_-16px_rgba(255,77,77,0.55)]">
-        {/* scanline */}
-        <div className="pointer-events-none absolute inset-x-0 h-16 bg-gradient-to-b from-transparent via-[#ff4d4d]/10 to-transparent anim-scan" />
-
-        <div className="relative flex items-center gap-3 border-b border-[#ff4d4d]/30 bg-[#ff4d4d]/8 px-5 py-3.5">
-          <span className="anim-sos grid size-10 place-items-center rounded-lg border border-[#ff4d4d]/60 bg-[#ff4d4d]/15 text-[#ff4d4d]">
-            <ShieldAlert className="size-5" />
+      <div className="fm-rise fm-panel relative w-full max-w-2xl overflow-hidden border-[rgba(208,92,75,0.6)] bg-[var(--fm-paper)]">
+        {/* red rule header */}
+        <div className="flex items-center gap-3 border-b border-[rgba(208,92,75,0.4)] bg-[rgba(208,92,75,0.08)] px-5 py-3.5">
+          <span className="fm-plate size-10 border-[rgba(208,92,75,0.5)]">
+            <ShieldAlert className={cn("size-5 text-[var(--fm-alert)]", "fm-blink")} />
           </span>
           <div>
-            <div className="hud-mono text-sm font-bold tracking-[0.2em] text-[#ff8080]">
-              MAYDAY · MAYDAY · MAYDAY
+            <div className="fm-mono text-sm font-bold tracking-[0.2em] text-[var(--fm-alert)] uppercase">
+              Mayday · Mayday · Mayday
             </div>
-            <div className="hud-label mt-0.5">
+            <div className="fm-label mt-0.5">
               Priority override · Expedition broadcast channel 1
             </div>
           </div>
@@ -70,7 +66,7 @@ export function SosOverlay({
           {/* Casualty telemetry */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="hud-label">Casualty Telemetry</span>
+              <span className="fm-label">Casualty telemetry</span>
               <StatusBadge tone="alert">{target.callsign}</StatusBadge>
             </div>
             <Vital
@@ -86,9 +82,9 @@ export function SosOverlay({
               value={`${target.supplies}%`}
               critical={target.supplies < 30}
             />
-            <div className="hud-panel px-3 py-2">
-              <div className="hud-label">Position</div>
-              <div className="hud-mono mt-0.5 text-[12px] font-semibold text-[#d7f4ff]">
+            <div className="fm-panel-2 px-3 py-2">
+              <div className="fm-label">Position</div>
+              <div className="fm-mono mt-0.5 text-[12px] font-semibold text-[var(--fm-ink)]">
                 {coord(target.pos.x)}E {coord(target.pos.y)}S · {fmtRelShort(elapsedSec)} since beacon
               </div>
             </div>
@@ -97,19 +93,19 @@ export function SosOverlay({
           {/* Rescue solve */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="hud-label">Nearest Rescue Solve</span>
+              <span className="fm-label">Nearest rescue solve</span>
               <StatusBadge tone="ice">
-                <Radio className="size-3" /> AUTO-DISPATCH
+                <Radio className="size-3" /> Auto-dispatch
               </StatusBadge>
             </div>
-            <div className="hud-panel space-y-2.5 p-3">
+            <div className="fm-panel-2 space-y-2.5 p-3">
               <div className="flex items-center gap-2">
-                <Truck className="size-4 text-[#48cae4]" />
+                <Truck className="size-4 text-[var(--fm-accent)]" />
                 <div className="min-w-0">
-                  <div className="hud-mono text-[13px] font-bold text-[#d7f4ff]">
+                  <div className="fm-mono text-[13px] font-bold text-[var(--fm-ink)]">
                     {rescue?.name ?? "NO ASSET AVAILABLE"}
                   </div>
-                  <div className="hud-label">Primary response vehicle</div>
+                  <div className="fm-label">Primary response vehicle</div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -119,9 +115,9 @@ export function SosOverlay({
                 <SolveStat label="O2 Loss Est." value={`${oxygenDrop}%`} />
               </div>
             </div>
-            <div className="hud-panel px-3 py-2.5">
-              <div className="hud-label mb-1">Dispatch Uplink</div>
-              <p className="hud-mono text-[10.5px] leading-relaxed text-[#9ec8dc]">
+            <div className="fm-panel-2 px-3 py-2.5">
+              <div className="fm-label mb-1">Dispatch uplink</div>
+              <p className="fm-mono text-[10.5px] leading-relaxed text-[var(--fm-mut)]">
                 {store.state.networkMode === "offline"
                   ? "OFFLINE — incident queued in local store. Rescue solve cached on-device; will broadcast when link restores."
                   : store.state.networkMode === "lowband"
@@ -132,13 +128,13 @@ export function SosOverlay({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[#ff4d4d]/30 px-5 py-3.5">
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--fm-line)] px-5 py-3.5">
           <button
             type="button"
             onClick={onClose}
-            className="hud-mono rounded-md border border-white/15 bg-white/5 px-3.5 py-2 text-[10px] font-bold tracking-[0.14em] text-[#9ec8dc] hover:bg-white/10"
+            className="fm-btn fm-btn-quiet fm-btn-sm"
           >
-            KEEP MONITORING (CLOSE)
+            Keep monitoring (close)
           </button>
           <button
             type="button"
@@ -146,9 +142,9 @@ export function SosOverlay({
               store.resolveSos(target.id);
               onClose();
             }}
-            className="hud-mono rounded-md border border-[#00f5d4]/50 bg-[#00f5d4]/15 px-3.5 py-2 text-[10px] font-bold tracking-[0.14em] text-[#00f5d4] hover:bg-[#00f5d4]/25"
+            className="fm-btn fm-btn-good fm-btn-sm"
           >
-            CONFIRM CREW SAFE · STAND DOWN
+            Confirm crew safe · Stand down
           </button>
         </div>
       </div>
@@ -170,16 +166,18 @@ function Vital({
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 rounded-lg border px-3 py-2",
-        critical ? "border-[#ff4d4d]/40 bg-[#ff4d4d]/8" : "border-[#48cae4]/20 bg-[#48cae4]/5",
+        "flex items-center gap-2.5 rounded-sm border px-3 py-2",
+        critical
+          ? "border-[rgba(208,92,75,0.4)] bg-[rgba(208,92,75,0.07)]"
+          : "border-[var(--fm-line)] bg-[var(--fm-paper-2)]",
       )}
     >
-      <Icon className={cn("size-4", critical ? "text-[#ff4d4d]" : "text-[#48cae4]")} />
-      <span className="hud-label flex-1">{label}</span>
+      <Icon className={cn("size-4", critical ? "text-[var(--fm-alert)]" : "text-[var(--fm-accent)]")} />
+      <span className="fm-label flex-1">{label}</span>
       <span
         className={cn(
-          "hud-mono text-[13px] font-bold tabular-nums",
-          critical ? "text-[#ff8080]" : "text-[#7be6fa]",
+          "fm-mono text-[13px] font-bold tabular-nums",
+          critical ? "text-[var(--fm-alert)]" : "text-[var(--fm-accent)]",
         )}
       >
         {value}
@@ -190,9 +188,9 @@ function Vital({
 
 function SolveStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-[#48cae4]/15 bg-[#0b132b]/70 px-2.5 py-1.5">
-      <div className="hud-label">{label}</div>
-      <div className="hud-mono text-[11px] font-bold text-[#d7f4ff]">{value}</div>
+    <div className="rounded-sm border border-[var(--fm-line)] bg-[var(--fm-paper)] px-2.5 py-1.5">
+      <div className="fm-label">{label}</div>
+      <div className="fm-mono text-[11px] font-bold text-[var(--fm-ink)]">{value}</div>
     </div>
   );
 }

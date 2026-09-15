@@ -21,9 +21,9 @@ import { toast } from "sonner";
 type GrantableRole = "member" | "user" | "admin";
 
 const ROLE_LABEL: Record<GrantableRole, string> = {
-  member: "OPERATOR",
-  user: "OBSERVER",
-  admin: "SUPERVISOR",
+  member: "Operator",
+  user: "Observer",
+  admin: "Supervisor",
 };
 
 /** Master-only: provision crew credentials and manage who holds portal access. */
@@ -44,10 +44,10 @@ export function AccessControl() {
 
   if (!isMaster) {
     return (
-      <Panel title="Access Control">
-        <div className="flex items-center gap-3 py-6 text-center">
-          <TriangleAlert className="size-5 shrink-0 text-[#ffd166]" />
-          <p className="hud-mono text-[11px] leading-relaxed text-[#9ec8dc]">
+      <Panel title="Access control">
+        <div className="flex items-center gap-3 py-6">
+          <TriangleAlert className="size-5 shrink-0 text-[var(--fm-warn)]" />
+          <p className="fm-mono text-[11px] leading-relaxed text-[var(--fm-mut)]">
             MASTER AUTHORITY REQUIRED — portal access is provisioned exclusively by
             the station master. Your account holds command duties only.
           </p>
@@ -99,15 +99,15 @@ export function AccessControl() {
 
   return (
     <div className="grid gap-4 xl:grid-cols-[380px_1fr]">
-      <Panel title="Grant Portal Access">
+      <Panel title="Grant portal access">
         <form onSubmit={handleCreate} className="space-y-3">
           <div>
-            <label className="hud-label mb-1 block" htmlFor="ac-name">
+            <label className="fm-label-field" htmlFor="ac-name">
               Crew name
             </label>
             <input
               id="ac-name"
-              className="hud-input"
+              className="fm-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. R. Iyer"
@@ -115,12 +115,12 @@ export function AccessControl() {
             />
           </div>
           <div>
-            <label className="hud-label mb-1 block" htmlFor="ac-email">
+            <label className="fm-label-field" htmlFor="ac-email">
               Email (login ID)
             </label>
             <input
               id="ac-email"
-              className="hud-input"
+              className="fm-input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -130,12 +130,12 @@ export function AccessControl() {
             />
           </div>
           <div>
-            <label className="hud-label mb-1 block" htmlFor="ac-password">
+            <label className="fm-label-field" htmlFor="ac-password">
               Temporary password
             </label>
             <input
               id="ac-password"
-              className="hud-input"
+              className="fm-input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -146,7 +146,7 @@ export function AccessControl() {
             />
           </div>
           <div>
-            <label className="hud-label mb-1 block">Access level</label>
+            <label className="fm-label-field">Access level</label>
             <div className="grid grid-cols-3 gap-2">
               {(Object.keys(ROLE_LABEL) as GrantableRole[]).map((r) => (
                 <button
@@ -154,10 +154,10 @@ export function AccessControl() {
                   type="button"
                   onClick={() => setRole(r)}
                   className={cn(
-                    "hud-mono rounded-md border px-2 py-2 text-[10px] font-bold tracking-[0.14em] transition-colors",
+                    "fm-mono rounded-sm border px-2 py-2 text-[10px] font-bold tracking-[0.14em] uppercase transition-colors",
                     role === r
-                      ? "border-[#00f5d4]/50 bg-[#00f5d4]/12 text-[#00f5d4]"
-                      : "border-[#48cae4]/20 bg-white/3 text-[#9ec8dc] hover:bg-white/8",
+                      ? "border-[rgba(127,174,142,0.5)] bg-[rgba(127,174,142,0.1)] text-[var(--fm-good)]"
+                      : "border-[var(--fm-line)] text-[var(--fm-mut)] hover:text-[var(--fm-ink)]",
                   )}
                 >
                   {ROLE_LABEL[r]}
@@ -165,16 +165,16 @@ export function AccessControl() {
               ))}
             </div>
           </div>
-          {formError && <p className="hud-mono text-[11px] text-[#ff8080]">{formError}</p>}
+          {formError && <p className="fm-mono text-[11px] text-[var(--fm-alert)]">{formError}</p>}
           <button
             type="submit"
             disabled={busy}
-            className="hud-mono flex w-full items-center justify-center gap-2 rounded-md border border-[#00f5d4]/50 bg-[#00f5d4]/15 px-3 py-2.5 text-[11px] font-bold tracking-[0.18em] text-[#00f5d4] transition-colors hover:bg-[#00f5d4]/25 disabled:opacity-40"
+            className="fm-btn fm-btn-solid w-full disabled:opacity-40"
           >
-            <UserPlus className="size-4" />
-            {busy ? "PROVISIONING…" : "CREATE CREW ACCOUNT"}
+            <UserPlus className="size-3.5" />
+            {busy ? "Provisioning…" : "Create crew account"}
           </button>
-          <p className="hud-mono text-[9px] leading-relaxed text-[#9ec8dc]/60">
+          <p className="fm-mono text-[9px] leading-relaxed text-[var(--fm-mut)] uppercase">
             Passwords are hashed server-side (scrypt). Share the temporary password
             over a secure channel; the crew member signs in with email + password.
           </p>
@@ -182,46 +182,46 @@ export function AccessControl() {
       </Panel>
 
       <Panel
-        title="Provisioned Accounts"
+        title="Provisioned accounts"
         actions={
           <StatusBadge tone="muted">
             <Users className="size-3" />
-            {accounts ? `${accounts.length} TOTAL` : "…"}
+            {accounts ? `${accounts.length} total` : "…"}
           </StatusBadge>
         }
         bodyClassName="p-0"
       >
         {!accounts ? (
           <div className="px-4 py-8 text-center">
-            <p className="hud-mono text-[10px] tracking-[0.14em] text-[#9ec8dc]/60">
-              LOADING ACCOUNT DIRECTORY…
+            <p className="fm-mono text-[10px] tracking-[0.14em] text-[var(--fm-mut)] uppercase">
+              Loading account directory…
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-[#48cae4]/8">
+          <ul className="divide-y divide-[var(--fm-line-soft)]">
             {accounts.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <span
                   className={cn(
-                    "grid size-9 shrink-0 place-items-center rounded-lg border",
+                    "fm-plate size-9",
                     a.isMaster
-                      ? "border-[#00f5d4]/40 bg-[#00f5d4]/10 text-[#00f5d4]"
-                      : "border-[#48cae4]/30 bg-[#48cae4]/8 text-[#7be6fa]",
+                      ? "border-[rgba(127,174,142,0.4)] text-[var(--fm-good)]"
+                      : "text-[var(--fm-accent)]",
                   )}
                 >
                   {a.isMaster ? <ShieldCheck className="size-4" /> : <KeyRound className="size-4" />}
                 </span>
                 <div className="min-w-0 flex-1 leading-tight">
-                  <div className="hud-mono truncate text-[12px] font-semibold text-[#d7f4ff]">
+                  <div className="fm-mono truncate text-[12px] font-semibold text-[var(--fm-ink)]">
                     {a.name ?? a.email}
                   </div>
-                  <div className="hud-mono flex items-center gap-1 truncate text-[10px] text-[#9ec8dc]/70">
+                  <div className="fm-mono flex items-center gap-1 truncate text-[10px] text-[var(--fm-mut)]">
                     <Mail className="size-3" /> {a.email}
                   </div>
                 </div>
                 {a.isMaster ? (
                   <StatusBadge tone="sync" pulse>
-                    <ShieldCheck className="size-3" /> MASTER
+                    <ShieldCheck className="size-3" /> Master
                   </StatusBadge>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -237,7 +237,7 @@ export function AccessControl() {
                       type="button"
                       onClick={() => handleDelete(a)}
                       title={`Remove ${a.name ?? a.email}`}
-                      className="rounded border border-[#ff4d4d]/30 px-1.5 py-1.5 text-[#ff8080] transition-colors hover:bg-[#ff4d4d]/15"
+                      className="rounded-sm border border-[rgba(208,92,75,0.35)] px-1.5 py-1.5 text-[var(--fm-alert)] transition-colors hover:bg-[rgba(208,92,75,0.1)]"
                     >
                       <Trash2 className="size-3.5" />
                     </button>
@@ -266,10 +266,10 @@ function RoleChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "hud-mono flex items-center gap-1 rounded border px-2 py-1 text-[9px] font-bold tracking-[0.14em] transition-colors",
+        "fm-mono flex items-center gap-1 rounded-sm border px-2 py-1 text-[9px] font-bold tracking-[0.14em] uppercase transition-colors",
         active
-          ? "border-[#00f5d4]/45 bg-[#00f5d4]/12 text-[#00f5d4]"
-          : "border-white/12 bg-white/4 text-[#9ec8dc]/70 hover:bg-white/10",
+          ? "border-[rgba(127,174,142,0.5)] bg-[rgba(127,174,142,0.1)] text-[var(--fm-good)]"
+          : "border-[var(--fm-line)] text-[var(--fm-mut)] hover:text-[var(--fm-ink)]",
       )}
     >
       {active ? <Check className="size-3" /> : <X className="size-3 opacity-50" />}

@@ -92,17 +92,6 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-
-  /* Polar tactical palette (used by .polar-hud scope) */
-  --ice: #48cae4;
-  --ice-bright: #7be6fa;
-  --ice-dim: #00b4d8;
-  --deep: #0b132b;
-  --deep-2: #1c2541;
-  --panel: #0e1830;
-  --alert: #ff4d4d;
-  --sync: #00f5d4;
-  --warn: #ffb703;
 }
 
 .dark {
@@ -133,6 +122,7 @@
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
@@ -151,238 +141,11 @@
   }
 }
 
-/* ===== Polar HUD scope (self-contained, does not touch template tokens) ===== */
-.polar-hud {
-  background:
-    radial-gradient(1200px 600px at 85% -10%, rgba(72, 202, 228, 0.1), transparent 60%),
-    radial-gradient(900px 500px at 0% 110%, rgba(0, 180, 216, 0.08), transparent 55%),
-    linear-gradient(160deg, #0b132b 0%, #101b3d 55%, #0b132b 100%);
-  color: #d7f4ff;
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
-}
-
-.polar-hud .hud-mono {
-  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-}
-
-.polar-hud .hud-panel {
-  position: relative;
-  background: linear-gradient(180deg, rgba(28, 37, 65, 0.55), rgba(14, 24, 48, 0.65));
-  border: 1px solid rgba(72, 202, 228, 0.18);
-  border-radius: 14px;
-  box-shadow:
-    inset 0 1px 0 rgba(123, 230, 250, 0.08),
-    0 18px 40px -24px rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(10px);
-}
-
-.polar-hud .hud-panel::before {
-  content: "";
-  position: absolute;
-  inset-inline: 12px;
-  top: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(72, 202, 228, 0.55), transparent);
-}
-
-.polar-hud .hud-panel-hover {
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
-}
-.polar-hud .hud-panel-hover:hover {
-  border-color: rgba(72, 202, 228, 0.45);
-  box-shadow:
-    inset 0 1px 0 rgba(123, 230, 250, 0.12),
-    0 0 0 1px rgba(72, 202, 228, 0.12),
-    0 24px 48px -28px rgba(0, 0, 0, 0.95),
-    0 0 34px -12px rgba(0, 180, 216, 0.35);
-}
-
-.polar-hud .hud-label {
-  color: rgba(158, 200, 220, 0.75);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-}
-
-.polar-hud .hud-input {
-  width: 100%;
-  background: rgba(11, 19, 43, 0.7);
-  border: 1px solid rgba(72, 202, 228, 0.22);
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 13px;
-  color: #d7f4ff;
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.polar-hud .hud-input::placeholder {
-  color: rgba(158, 200, 220, 0.4);
-}
-.polar-hud .hud-input:focus {
-  border-color: rgba(72, 202, 228, 0.65);
-  box-shadow: 0 0 0 3px rgba(72, 202, 228, 0.15);
-}
-.polar-hud select.hud-input {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2348cae4' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 28px;
-}
-
-.polar-hud .hud-range {
-  appearance: none;
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(72, 202, 228, 0.35), rgba(11, 19, 43, 0.9));
-  border: 1px solid rgba(72, 202, 228, 0.2);
-  outline: none;
-}
-.polar-hud .hud-range::-webkit-slider-thumb {
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: #48cae4;
-  border: 2px solid #0b132b;
-  box-shadow: 0 0 10px rgba(72, 202, 228, 0.7);
-  cursor: pointer;
-}
-.polar-hud .hud-range::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: #48cae4;
-  border: 2px solid #0b132b;
-  box-shadow: 0 0 10px rgba(72, 202, 228, 0.7);
-  cursor: pointer;
-}
-
-/* ===== Keyframes ===== */
-@keyframes radar-sweep {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes ping-ring {
-  0% {
-    transform: scale(0.6);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(2.6);
-    opacity: 0;
-  }
-}
-
-@keyframes sos-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.55), 0 0 24px rgba(255, 77, 77, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(255, 77, 77, 0), 0 0 44px rgba(255, 77, 77, 0.75);
-  }
-}
-
-@keyframes sos-alert-in {
-  0% {
-    opacity: 0;
-    transform: scale(1.04);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes alert-flash {
-  0%,
-  100% {
-    opacity: 0.12;
-  }
-  50% {
-    opacity: 0.4;
-  }
-}
-
-@keyframes scanline {
-  0% {
-    transform: translateY(-100%);
-  }
-  100% {
-    transform: translateY(700%);
-  }
-}
-
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-
-@keyframes route-dash {
-  to {
-    stroke-dashoffset: -32;
-  }
-}
-
-/* ===== Animation utility classes ===== */
-.polar-hud .anim-radar {
-  animation: radar-sweep 4s linear infinite;
-}
-.polar-hud .anim-ping {
-  animation: ping-ring 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
-.polar-hud .anim-sos {
-  animation: sos-pulse 1.6s ease-in-out infinite;
-}
-.polar-hud .anim-sos-in {
-  animation: sos-alert-in 0.3s ease-out both;
-}
-.polar-hud .anim-flash {
-  animation: alert-flash 1.4s ease-in-out infinite;
-}
-.polar-hud .anim-scan {
-  animation: scanline 5.5s linear infinite;
-}
-.polar-hud .anim-blink {
-  animation: blink 1.4s ease-in-out infinite;
-}
-.polar-hud .anim-route {
-  stroke-dasharray: 8 6;
-  animation: route-dash 1.2s linear infinite;
-}
-
-/* Reduced motion: kill decorative loops */
-@media (prefers-reduced-motion: reduce) {
-  .polar-hud .anim-radar,
-  .polar-hud .anim-ping,
-  .polar-hud .anim-sos,
-  .polar-hud .anim-flash,
-  .polar-hud .anim-scan,
-  .polar-hud .anim-blink,
-  .polar-hud .anim-route {
-    animation: none;
-  }
-}
-
 /* ==========================================================================
-   FIELD MANUAL — editorial scope for the public marketing pages.
-   Flat ink surfaces, hairline rules, serif headlines, numbered sections.
-   Deliberately avoids gradients, glows and blur so it reads as typeset
-   documentation rather than a product landing page. The tactical HUD scope
-   above is untouched — the dashboard keeps its instrument look.
+   FIELD MANUAL — editorial scope shared by the public pages AND the command
+   deck. Flat ink surfaces, hairline rules, serif headlines, mono readouts.
+   Deliberately avoids gradients, glows and blur so the whole product reads as
+   typeset field documentation for one instrument.
    ========================================================================== */
 
 .fm {
@@ -397,6 +160,8 @@
   --fm-accent: #7fb4c9;
   --fm-accent-deep: #4e7d92;
   --fm-alert: #d05c4b;
+  --fm-warn: #c9a34f;
+  --fm-good: #7fae8e;
 
   background: var(--fm-bg);
   color: var(--fm-ink);
@@ -502,6 +267,7 @@
 .fm .fm-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 11px;
@@ -543,6 +309,31 @@
   color: var(--fm-ink);
 }
 
+.fm .fm-btn-alert {
+  border-color: rgba(208, 92, 75, 0.55);
+  color: var(--fm-alert);
+}
+
+.fm .fm-btn-alert:hover {
+  background: rgba(208, 92, 75, 0.1);
+  color: var(--fm-alert);
+}
+
+.fm .fm-btn-good {
+  border-color: rgba(127, 174, 142, 0.55);
+  color: var(--fm-good);
+}
+
+.fm .fm-btn-good:hover {
+  background: rgba(127, 174, 142, 0.1);
+  color: var(--fm-good);
+}
+
+.fm .fm-btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 10px;
+}
+
 /* Flat tag chip */
 .fm .fm-tag {
   display: inline-flex;
@@ -557,6 +348,44 @@
   border-radius: 3px;
   color: var(--fm-mut);
   background: var(--fm-paper);
+}
+
+/* Status chips (instrument badges): neutral by default, tone modifiers */
+.fm .fm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--fm-line);
+  border-radius: 3px;
+  color: var(--fm-mut);
+  background: var(--fm-paper);
+  white-space: nowrap;
+}
+
+.fm .fm-chip-ok {
+  color: var(--fm-accent);
+  border-color: rgba(127, 180, 201, 0.4);
+}
+
+.fm .fm-chip-good {
+  color: var(--fm-good);
+  border-color: rgba(127, 174, 142, 0.4);
+}
+
+.fm .fm-chip-warn {
+  color: var(--fm-warn);
+  border-color: rgba(201, 163, 79, 0.45);
+}
+
+.fm .fm-chip-alert {
+  color: var(--fm-alert);
+  border-color: rgba(208, 92, 75, 0.5);
 }
 
 /* Marginal note / asides */
@@ -596,6 +425,14 @@
   border-color: var(--fm-accent-deep);
 }
 
+.fm select.fm-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237fb4c9' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
 .fm .fm-label-field {
   display: block;
   font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -604,6 +441,74 @@
   text-transform: uppercase;
   color: var(--fm-mut);
   margin-bottom: 0.4rem;
+}
+
+/* Flat horizontal meter */
+.fm .fm-meter-track {
+  height: 4px;
+  background: var(--fm-line-soft);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.fm .fm-meter-fill {
+  display: block;
+  height: 100%;
+  background: var(--fm-accent);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.fm .fm-meter-fill.tone-good {
+  background: var(--fm-good);
+}
+
+.fm .fm-meter-fill.tone-warn {
+  background: var(--fm-warn);
+}
+
+.fm .fm-meter-fill.tone-alert {
+  background: var(--fm-alert);
+}
+
+/* Flat range slider (mission parameters) */
+.fm .fm-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  background: var(--fm-line);
+  border-radius: 1px;
+  outline: none;
+}
+
+.fm .fm-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--fm-accent);
+  border: 1px solid var(--fm-bg);
+  cursor: pointer;
+}
+
+.fm .fm-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--fm-accent);
+  border: 1px solid var(--fm-bg);
+  cursor: pointer;
+}
+
+/* Small square icon plate */
+.fm .fm-plate {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--fm-line);
+  border-radius: 3px;
+  background: var(--fm-paper);
 }
 
 /* Links */
@@ -649,8 +554,36 @@
   animation: fm-rise 0.5s ease both;
 }
 
+/* Functional motion only: attention blink + marching route dashes */
+@keyframes fm-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.fm .fm-blink {
+  animation: fm-blink 1.6s ease-in-out infinite;
+}
+
+@keyframes fm-dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.fm .fm-dash {
+  stroke-dasharray: 6 4;
+  animation: fm-dash 1.4s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .fm .fm-rise {
+  .fm .fm-rise,
+  .fm .fm-blink,
+  .fm .fm-dash {
     animation: none;
   }
 }

@@ -49,10 +49,10 @@ export function InventoryTab({ store }: { store: PolarStore }) {
     <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
       {/* Supply grid */}
       <Panel
-        title="Supply Chain Node · Stock Levels"
+        title="Supply chain node · stock levels"
         actions={
           <StatusBadge tone={alerts.length > 0 ? "warn" : "sync"}>
-            {alerts.length > 0 ? `${alerts.length} THRESHOLD FLAGS` : "ALL NOMINAL"}
+            {alerts.length > 0 ? `${alerts.length} threshold flags` : "All nominal"}
           </StatusBadge>
         }
         bodyClassName="p-0"
@@ -60,12 +60,12 @@ export function InventoryTab({ store }: { store: PolarStore }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#48cae4]/12 text-left">
-                <th className="hud-label px-4 py-2.5 font-medium">Commodity</th>
-                <th className="hud-label px-3 py-2.5 font-medium">Status</th>
-                <th className="hud-label px-3 py-2.5 font-medium">Stock / Cap</th>
-                <th className="hud-label hidden px-3 py-2.5 font-medium sm:table-cell">Level</th>
-                <th className="hud-label hidden px-4 py-2.5 text-right font-medium md:table-cell">
+              <tr className="border-b border-[var(--fm-line-soft)] text-left">
+                <th className="fm-label px-4 py-2.5 font-medium">Commodity</th>
+                <th className="fm-label px-3 py-2.5 font-medium">Status</th>
+                <th className="fm-label px-3 py-2.5 font-medium">Stock / Cap</th>
+                <th className="fm-label hidden px-3 py-2.5 font-medium sm:table-cell">Level</th>
+                <th className="fm-label hidden px-4 py-2.5 text-right font-medium md:table-cell">
                   Updated
                 </th>
               </tr>
@@ -78,32 +78,32 @@ export function InventoryTab({ store }: { store: PolarStore }) {
                   <tr
                     key={c.id}
                     className={cn(
-                      "border-b border-[#48cae4]/8 transition-colors hover:bg-[#48cae4]/5",
-                      itemId === c.id && "bg-[#48cae4]/8",
-                      (st === "CRITICAL" || st === "DEPLETED") && "bg-[#ff4d4d]/5",
+                      "border-b border-[var(--fm-line-soft)] transition-colors hover:bg-[rgba(127,180,201,0.05)]",
+                      itemId === c.id && "bg-[rgba(127,180,201,0.07)]",
+                      (st === "CRITICAL" || st === "DEPLETED") && "bg-[rgba(208,92,75,0.05)]",
                     )}
                     onClick={() => setItemId(c.id)}
                   >
                     <td className="px-4 py-2.5">
-                      <div className="hud-mono text-[12.5px] font-semibold text-[#d7f4ff]">{c.name}</div>
-                      <div className="hud-mono text-[10px] text-[#9ec8dc]/70">{c.category}</div>
+                      <div className="fm-mono text-[12.5px] font-semibold text-[var(--fm-ink)]">{c.name}</div>
+                      <div className="fm-mono text-[10px] text-[var(--fm-mut)]">{c.category}</div>
                     </td>
                     <td className="px-3 py-2.5">
                       <StatusBadge tone={STOCK_TONE[st]} pulse={st === "DEPLETED"}>
                         {st}
                       </StatusBadge>
                     </td>
-                    <td className="hud-mono px-3 py-2.5 text-[12px] tabular-nums text-[#d7f4ff]">
+                    <td className="fm-mono px-3 py-2.5 text-[12px] tabular-nums text-[var(--fm-ink)]">
                       {c.stock}{" "}
-                      <span className="text-[#9ec8dc]/60">/ {c.capacity} {c.unit}</span>
-                      <div className="hud-mono text-[9px] text-[#9ec8dc]/60">MIN {c.threshold}</div>
+                      <span className="text-[var(--fm-mut)]">/ {c.capacity} {c.unit}</span>
+                      <div className="fm-mono text-[9px] text-[var(--fm-mut)]">MIN {c.threshold}</div>
                     </td>
                     <td className="hidden px-3 py-2.5 sm:table-cell">
                       <div className="w-28">
                         <Meter value={fill} tone={STOCK_TONE[st]} dense />
                       </div>
                     </td>
-                    <td className="hud-mono hidden px-4 py-2.5 text-right text-[10px] text-[#9ec8dc]/70 md:table-cell">
+                    <td className="fm-mono hidden px-4 py-2.5 text-right text-[10px] text-[var(--fm-mut)] md:table-cell">
                       {fmtUtc(c.updatedAt)}
                     </td>
                   </tr>
@@ -116,18 +116,18 @@ export function InventoryTab({ store }: { store: PolarStore }) {
 
       {/* Right rail: form + ledger */}
       <div className="space-y-4">
-        <Panel title="Log Cargo Movement">
+        <Panel title="Log cargo movement">
           <form onSubmit={submit} className="space-y-3">
             <div>
-              <label className="hud-label mb-1 block" htmlFor="cargo-item">Commodity</label>
+              <label className="fm-label-field" htmlFor="cargo-item">Commodity</label>
               <select
                 id="cargo-item"
-                className="hud-input"
+                className="fm-input fm-mono text-[13px]"
                 value={itemId}
                 onChange={(e) => setItemId(e.target.value)}
               >
                 {state.cargo.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-[#0b132b]">
+                  <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
                 ))}
@@ -141,12 +141,12 @@ export function InventoryTab({ store }: { store: PolarStore }) {
                   type="button"
                   onClick={() => setKind(k)}
                   className={cn(
-                    "hud-mono flex items-center justify-center gap-1.5 rounded-md border px-2 py-2 text-[10px] font-bold tracking-[0.14em] transition-colors",
+                    "fm-mono flex items-center justify-center gap-1.5 rounded-sm border px-2 py-2 text-[10px] font-bold tracking-[0.14em] uppercase transition-colors",
                     kind === k
                       ? k === "INCOMING"
-                        ? "border-[#00f5d4]/50 bg-[#00f5d4]/12 text-[#00f5d4]"
-                        : "border-[#ffb703]/50 bg-[#ffb703]/12 text-[#ffd166]"
-                      : "border-[#48cae4]/20 bg-white/3 text-[#9ec8dc] hover:bg-white/8",
+                        ? "border-[rgba(127,174,142,0.5)] bg-[rgba(127,174,142,0.1)] text-[var(--fm-good)]"
+                        : "border-[rgba(201,163,79,0.5)] bg-[rgba(201,163,79,0.1)] text-[var(--fm-warn)]"
+                      : "border-[var(--fm-line)] text-[var(--fm-mut)] hover:text-[var(--fm-ink)]",
                   )}
                 >
                   {k === "INCOMING" ? (
@@ -160,12 +160,12 @@ export function InventoryTab({ store }: { store: PolarStore }) {
             </div>
 
             <div>
-              <label className="hud-label mb-1 block" htmlFor="cargo-qty">
+              <label className="fm-label-field" htmlFor="cargo-qty">
                 Quantity ({item?.unit ?? "units"})
               </label>
               <input
                 id="cargo-qty"
-                className="hud-input"
+                className="fm-input fm-mono text-[13px]"
                 type="number"
                 min={1}
                 max={item?.capacity ?? 999}
@@ -175,10 +175,10 @@ export function InventoryTab({ store }: { store: PolarStore }) {
             </div>
 
             <div>
-              <label className="hud-label mb-1 block" htmlFor="cargo-note">Field note</label>
+              <label className="fm-label-field" htmlFor="cargo-note">Field note</label>
               <input
                 id="cargo-note"
-                className="hud-input"
+                className="fm-input"
                 placeholder="e.g. Convoy resupply — manifest 22-B"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
@@ -186,10 +186,10 @@ export function InventoryTab({ store }: { store: PolarStore }) {
             </div>
 
             {item && (
-              <div className="hud-panel flex items-center justify-between px-3 py-2">
+              <div className="fm-panel-2 flex items-center justify-between px-3 py-2">
                 <div>
-                  <div className="hud-label">Resulting stock</div>
-                  <div className="hud-mono text-[13px] font-bold text-[#d7f4ff] tabular-nums">
+                  <div className="fm-label">Resulting stock</div>
+                  <div className="fm-mono text-[13px] font-bold text-[var(--fm-ink)] tabular-nums">
                     {selected} / {item.capacity} {item.unit}
                   </div>
                 </div>
@@ -202,43 +202,43 @@ export function InventoryTab({ store }: { store: PolarStore }) {
             <button
               type="submit"
               disabled={!item || qtyNum <= 0}
-              className="hud-mono w-full rounded-md border border-[#48cae4]/50 bg-[#48cae4]/15 px-3 py-2.5 text-[11px] font-bold tracking-[0.18em] text-[#7be6fa] transition-colors hover:bg-[#48cae4]/25 disabled:cursor-not-allowed disabled:opacity-40"
+              className="fm-btn fm-btn fm-btn-solid w-full disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <ClipboardList className="mr-1.5 inline size-4" />
-              COMMIT ENTRY
+              <ClipboardList className="size-3.5" />
+              Commit entry
             </button>
-            <p className="hud-mono text-[9px] leading-relaxed text-[#9ec8dc]/60">
-              Optimistic write · {state.networkMode === "offline" ? "queued in LOCAL STORE until link restores" : "sync engine streaming to HQ"}
+            <p className="fm-mono text-[9px] leading-relaxed text-[var(--fm-mut)] uppercase">
+              Optimistic write · {state.networkMode === "offline" ? "queued in local store until link restores" : "sync engine streaming to HQ"}
             </p>
           </form>
         </Panel>
 
         <Panel
-          title="Movement Ledger"
+          title="Movement ledger"
           actions={
             <StatusBadge tone="muted">
-              <Boxes className="size-3" /> LAST 40
+              <Boxes className="size-3" /> Last 40
             </StatusBadge>
           }
           bodyClassName="p-0"
         >
           {state.cargoLog.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
-              <PackageSearch className="size-6 text-[#48cae4]/50" />
-              <p className="hud-mono text-[10px] tracking-[0.14em] text-[#9ec8dc]/70">
-                NO MOVEMENTS LOGGED THIS SESSION
+              <PackageSearch className="size-6 text-[var(--fm-accent-deep)]" />
+              <p className="fm-mono text-[10px] tracking-[0.14em] text-[var(--fm-mut)] uppercase">
+                No movements logged this session
               </p>
             </div>
           ) : (
-            <ul className="max-h-72 divide-y divide-[#48cae4]/8 overflow-y-auto">
+            <ul className="max-h-72 divide-y divide-[var(--fm-line-soft)] overflow-y-auto">
               {state.cargoLog.map((e) => (
                 <li key={e.id} className="flex items-center gap-2.5 px-4 py-2.5">
                   <span
                     className={cn(
-                      "grid size-6 shrink-0 place-items-center rounded border",
+                      "fm-plate grid size-6 shrink-0 place-items-center",
                       e.kind === "INCOMING"
-                        ? "border-[#00f5d4]/35 bg-[#00f5d4]/10 text-[#00f5d4]"
-                        : "border-[#ffb703]/35 bg-[#ffb703]/10 text-[#ffd166]",
+                        ? "border-[rgba(127,174,142,0.4)] text-[var(--fm-good)]"
+                        : "border-[rgba(201,163,79,0.4)] text-[var(--fm-warn)]",
                     )}
                   >
                     {e.kind === "INCOMING" ? (
@@ -248,19 +248,19 @@ export function InventoryTab({ store }: { store: PolarStore }) {
                     )}
                   </span>
                   <div className="min-w-0 flex-1 leading-tight">
-                    <div className="hud-mono truncate text-[11.5px] font-semibold text-[#d7f4ff]">
+                    <div className="fm-mono truncate text-[11.5px] font-semibold text-[var(--fm-ink)]">
                       {e.kind === "INCOMING" ? "+" : "−"}
                       {e.qty} {e.itemName}
                     </div>
-                    <div className="hud-mono truncate text-[9.5px] text-[#9ec8dc]/70">
+                    <div className="fm-mono truncate text-[9.5px] text-[var(--fm-mut)]">
                       {fmtUtc(e.at)}Z {e.note ? `· ${e.note}` : ""}
                     </div>
                   </div>
                   {e.synced ? (
-                    <StatusBadge tone="sync">SYNCED</StatusBadge>
+                    <StatusBadge tone="sync">Synced</StatusBadge>
                   ) : (
                     <StatusBadge tone="warn" pulse>
-                      <TriangleAlert className="size-3" /> QUEUED
+                      <TriangleAlert className="size-3" /> Queued
                     </StatusBadge>
                   )}
                 </li>
