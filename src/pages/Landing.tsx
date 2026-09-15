@@ -5,6 +5,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { SiteLayout } from "@/components/site/SiteChrome";
+import { GlowingStarsBackgroundCardPreview } from "@/components/glows/GlowingStarsBackgroundCardPreview";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
@@ -280,6 +281,7 @@ export default function Landing() {
             </p>
           </div>
           <div className="flex flex-col justify-center gap-3">
+            <GlowingStarsBackgroundCardPreview />
             <Link to="/auth" className="fm-btn fm-btn-solid justify-center">
               Enter command
             </Link>
