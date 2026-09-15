@@ -114,10 +114,18 @@ export const Illustration = ({ mouseEnter }: { mouseEnter: boolean }) => {
   );
 };
 
-const Star = ({ isGlowing, delay }: { isGlowing: boolean; delay: number }) => {
+const Star = ({
+  isGlowing,
+  delay,
+  duration = 2,
+}: {
+  isGlowing: boolean;
+  delay: number;
+  /** Animation length in seconds; the cursor-reactive backdrop passes a snappier value. */
+  duration?: number;
+}) => {
   return (
     <motion.div
-      key={delay}
       initial={{
         scale: 1,
       }}
@@ -126,7 +134,7 @@ const Star = ({ isGlowing, delay }: { isGlowing: boolean; delay: number }) => {
         background: isGlowing ? "#fff" : "#666",
       }}
       transition={{
-        duration: 2,
+        duration,
         ease: "easeInOut",
         delay: delay,
       }}
@@ -135,7 +143,14 @@ const Star = ({ isGlowing, delay }: { isGlowing: boolean; delay: number }) => {
   );
 };
 
-const Glow = ({ delay }: { delay: number }) => {
+const Glow = ({
+  delay,
+  duration = 2,
+}: {
+  delay: number;
+  /** Animation length in seconds; the cursor-reactive backdrop passes a snappier value. */
+  duration?: number;
+}) => {
   return (
     <motion.div
       initial={{
@@ -145,12 +160,13 @@ const Glow = ({ delay }: { delay: number }) => {
         opacity: 1,
       }}
       transition={{
-        duration: 2,
+        duration,
         ease: "easeInOut",
         delay: delay,
       }}
       exit={{
         opacity: 0,
+        transition: { duration: Math.min(duration, 0.4) },
       }}
       className="absolute  left-1/2 -translate-x-1/2 z-10 h-[4px] w-[4px] rounded-full bg-blue-500 blur-[1px] shadow-2xl shadow-blue-400"
     />
@@ -167,6 +183,9 @@ interface CursorSample {
   w: number;
   h: number;
 }
+
+/** Star/glow animation length (s) for cursor-lit stars — snappy on purpose. */
+const CURSOR_DURATION = 0.35;
 
 /**
  * Full-bleed, cursor-reactive variant of the star field. Fills its positioned
@@ -277,20 +296,29 @@ export const GlowingStarsBackdrop = ({
       >
         {[...Array(total)].map((_, starIdx) => {
           const cursorDist = cursorSet.get(starIdx);
-          const isGlowing =
-            cursorDist !== undefined || ambient.includes(starIdx);
-          const delay = cursorDist !== undefined
-            ? // cluster: nearest stars wake first
-              cursorDist * 0.9
+          const isCursor = cursorDist !== undefined;
+          const isGlowing = isCursor || ambient.includes(starIdx);
+          const delay = isCursor
+            ? // cluster: nearest stars wake first — near-instant
+              cursorDist * 0.08
             : (starIdx % 10) * 0.1;
           return (
             <div
               key={`backdrop-star-${starIdx}`}
               className="relative flex items-center justify-center"
             >
-              <Star isGlowing={isGlowing} delay={delay} />
+              <Star
+                isGlowing={isGlowing}
+                delay={delay}
+                duration={isCursor ? CURSOR_DURATION : 2}
+              />
               <AnimatePresence mode="wait">
-                {isGlowing && <Glow delay={delay} />}
+                {isGlowing && (
+                  <Glow
+                    delay={delay}
+                    duration={isCursor ? CURSOR_DURATION : 2}
+                  />
+                )}
               </AnimatePresence>
             </div>
           );
