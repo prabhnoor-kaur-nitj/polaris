@@ -376,3 +376,281 @@
     animation: none;
   }
 }
+
+/* ==========================================================================
+   FIELD MANUAL — editorial scope for the public marketing pages.
+   Flat ink surfaces, hairline rules, serif headlines, numbered sections.
+   Deliberately avoids gradients, glows and blur so it reads as typeset
+   documentation rather than a product landing page. The tactical HUD scope
+   above is untouched — the dashboard keeps its instrument look.
+   ========================================================================== */
+
+.fm {
+  --fm-bg: #0d1015;
+  --fm-paper: #131820;
+  --fm-paper-2: #171d26;
+  --fm-line: #242c37;
+  --fm-line-soft: #1b222c;
+  --fm-ink: #e8e4d8;
+  --fm-ink-dim: #c9c4b4;
+  --fm-mut: #8b939d;
+  --fm-accent: #7fb4c9;
+  --fm-accent-deep: #4e7d92;
+  --fm-alert: #d05c4b;
+
+  background: var(--fm-bg);
+  color: var(--fm-ink);
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.fm ::selection {
+  background: var(--fm-accent-deep);
+  color: #0d1015;
+}
+
+.fm .fm-serif {
+  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+}
+
+.fm .fm-label {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fm-mut);
+}
+
+.fm .fm-mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.fm .fm-h1 {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(2.1rem, 5vw, 3.6rem);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  color: var(--fm-ink);
+}
+
+.fm .fm-h2 {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(1.55rem, 3vw, 2.2rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--fm-ink);
+}
+
+.fm .fm-h3 {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  color: var(--fm-ink);
+}
+
+.fm .fm-body {
+  color: var(--fm-ink-dim);
+}
+
+.fm .fm-dim {
+  color: var(--fm-mut);
+}
+
+.fm .fm-accent {
+  color: var(--fm-accent);
+}
+
+/* Hairline rules */
+.fm .fm-rule {
+  border: 0;
+  border-top: 1px solid var(--fm-line);
+}
+
+.fm .fm-rule-soft {
+  border: 0;
+  border-top: 1px solid var(--fm-line-soft);
+}
+
+/* Flat panel: 1px hairline, faint paper fill, small radius */
+.fm .fm-panel {
+  background: var(--fm-paper);
+  border: 1px solid var(--fm-line);
+  border-radius: 4px;
+}
+
+.fm .fm-panel-2 {
+  background: var(--fm-paper-2);
+  border: 1px solid var(--fm-line);
+  border-radius: 4px;
+}
+
+/* Numbered section heading row */
+.fm .fm-num {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 0.95rem;
+  color: var(--fm-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Buttons: flat, squared, mono */
+.fm .fm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.8rem 1.4rem;
+  border-radius: 3px;
+  border: 1px solid var(--fm-accent-deep);
+  color: var(--fm-accent);
+  background: transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.fm .fm-btn:hover {
+  background: rgba(127, 180, 201, 0.08);
+  color: var(--fm-ink);
+}
+
+.fm .fm-btn-solid {
+  background: var(--fm-accent);
+  border-color: var(--fm-accent);
+  color: #0d1015;
+}
+
+.fm .fm-btn-solid:hover {
+  background: var(--fm-ink);
+  border-color: var(--fm-ink);
+  color: #0d1015;
+}
+
+.fm .fm-btn-quiet {
+  border-color: var(--fm-line);
+  color: var(--fm-ink-dim);
+}
+
+.fm .fm-btn-quiet:hover {
+  background: var(--fm-paper-2);
+  color: var(--fm-ink);
+}
+
+/* Flat tag chip */
+.fm .fm-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--fm-line);
+  border-radius: 3px;
+  color: var(--fm-mut);
+  background: var(--fm-paper);
+}
+
+/* Marginal note / asides */
+.fm .fm-note {
+  border-left: 2px solid var(--fm-accent-deep);
+  padding-left: 1rem;
+  color: var(--fm-mut);
+}
+
+/* Data table rows */
+.fm .fm-row {
+  border-top: 1px solid var(--fm-line-soft);
+}
+
+.fm .fm-row:last-child {
+  border-bottom: 1px solid var(--fm-line-soft);
+}
+
+/* Form fields: flat, squared */
+.fm .fm-input {
+  width: 100%;
+  background: var(--fm-bg);
+  border: 1px solid var(--fm-line);
+  border-radius: 3px;
+  padding: 0.7rem 0.85rem;
+  font-size: 14px;
+  color: var(--fm-ink);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.fm .fm-input::placeholder {
+  color: #5a636d;
+}
+
+.fm .fm-input:focus {
+  border-color: var(--fm-accent-deep);
+}
+
+.fm .fm-label-field {
+  display: block;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fm-mut);
+  margin-bottom: 0.4rem;
+}
+
+/* Links */
+.fm .fm-link {
+  color: var(--fm-accent);
+  text-decoration: underline;
+  text-decoration-color: var(--fm-accent-deep);
+  text-underline-offset: 3px;
+}
+
+.fm .fm-link:hover {
+  color: var(--fm-ink);
+}
+
+/* Nav + footer link */
+.fm .fm-navlink {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fm-mut);
+  transition: color 0.15s ease;
+}
+
+.fm .fm-navlink:hover,
+.fm .fm-navlink[aria-current="page"] {
+  color: var(--fm-ink);
+}
+
+/* Subtle entry motion, editorial-feeling (no spring) */
+@keyframes fm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fm .fm-rise {
+  animation: fm-rise 0.5s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fm .fm-rise {
+    animation: none;
+  }
+}

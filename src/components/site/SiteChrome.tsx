@@ -1,5 +1,5 @@
-// Shared chrome for the public marketing pages: navigation bar, breadcrumbs,
-// footer and a layout wrapper so every public route is consistent.
+// Shared chrome for the public pages, set in the "field manual" editorial
+// style: flat ink surfaces, hairline rules, mono labels, serif accents.
 import logo from "@/assets/logo.svg";
 import { cn } from "@/lib/utils";
 import {
@@ -10,68 +10,66 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Info, Mail, Snowflake } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 const NAV_LINKS = [
-  { to: "/about", label: "About" },
-  { to: "/contact", label: "Contact" },
+  { to: "/about", label: "About", num: "01" },
+  { to: "/contact", label: "Contact", num: "02" },
 ] as const;
 
-/** Sticky navigation bar with internal links to every public page. */
+/** Top navigation: flat bar, hairline rules, mono links. */
 export function SiteNav() {
   const { pathname } = useLocation();
   return (
-    <header className="sticky top-0 z-40 border-b border-[#48cae4]/15 bg-[#0b132b]/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
-        <Link to="/" className="flex items-center gap-2.5" aria-label="POLARIS home">
-          <img src={logo} alt="POLARIS expedition command logo" className="size-8 rounded-lg" />
-          <span className="hud-mono text-[11px] font-bold tracking-[0.18em] text-[#d7f4ff]">
-            POLARIS <span className="text-[#48cae4]/70">|</span>{" "}
-            <span className="hidden text-[#7be6fa] sm:inline">EXPEDITION COMMAND</span>
+    <header className="border-b border-[var(--fm-line)] bg-[var(--fm-bg)]">
+      <div className="mx-auto flex h-16 max-w-5xl items-baseline gap-6 px-5">
+        <Link to="/" className="flex items-baseline gap-3" aria-label="POLARIS home">
+          <img
+            src={logo}
+            alt="POLARIS expedition command logo"
+            className="size-7 self-center rounded-sm"
+          />
+          <span className="fm-mono text-[13px] font-semibold tracking-[0.28em] text-[var(--fm-ink)]">
+            POLARIS
+          </span>
+          <span className="fm-serif hidden text-sm italic text-[var(--fm-mut)] sm:inline">
+            expedition command
           </span>
         </Link>
 
-        <nav aria-label="Primary" className="ml-auto flex items-center gap-1">
-          {NAV_LINKS.map((l) => {
-            const active = pathname.startsWith(l.to);
-            return (
-              <Link
-                key={l.to}
-                to={l.to}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "hud-mono hidden rounded-md px-2.5 py-2 text-[10px] font-bold tracking-[0.14em] transition-colors sm:inline-block",
-                  active
-                    ? "bg-[#48cae4]/15 text-[#7be6fa]"
-                    : "text-[#9ec8dc] hover:bg-white/5 hover:text-[#d7f4ff]",
-                )}
-              >
-                {l.label.toUpperCase()}
-              </Link>
-            );
-          })}
+        <nav aria-label="Primary" className="ml-auto flex items-center gap-6">
+          {NAV_LINKS.map((l) => (
+            <Link
+              key={l.to}
+              to={l.to}
+              aria-current={pathname.startsWith(l.to) ? "page" : undefined}
+              className="fm-navlink hidden sm:inline"
+            >
+              <span className="fm-num mr-1.5 text-[10px]">{l.num}</span>
+              {l.label}
+            </Link>
+          ))}
           <Link
             to="/auth"
-            className="hud-mono ml-1 rounded-md border border-[#48cae4]/40 bg-transparent px-3 py-2 text-[10px] font-bold tracking-[0.14em] text-[#7be6fa] transition-colors hover:bg-[#48cae4]/10"
+            className={cn(
+              "fm-mono border border-[var(--fm-accent-deep)] px-3 py-1.5 text-[11px] tracking-[0.16em] uppercase",
+              "text-[var(--fm-accent)] transition-colors hover:bg-[rgba(127,180,201,0.08)] hover:text-[var(--fm-ink)]",
+            )}
           >
-            SIGN IN
+            Sign in
           </Link>
         </nav>
       </div>
-      {/* Mobile secondary row — nav links are hidden on the smallest screens. */}
-      <div className="flex items-center justify-center gap-4 border-t border-[#48cae4]/10 py-1.5 sm:hidden">
+      {/* Mobile row — nav links collapse below the bar on small screens. */}
+      <div className="flex items-center justify-center gap-8 border-t border-[var(--fm-line-soft)] py-2 sm:hidden">
         {NAV_LINKS.map((l) => (
           <Link
             key={l.to}
             to={l.to}
             aria-current={pathname.startsWith(l.to) ? "page" : undefined}
-            className={cn(
-              "hud-mono text-[9px] font-bold tracking-[0.16em]",
-              pathname.startsWith(l.to) ? "text-[#7be6fa]" : "text-[#9ec8dc]",
-            )}
+            className="fm-navlink"
           >
-            {l.label.toUpperCase()}
+            {l.label}
           </Link>
         ))}
       </div>
@@ -85,99 +83,113 @@ const CRUMB_LABELS: Record<string, string> = {
   "thank-you": "Thank You",
 };
 
-/** Breadcrumbs trail: Home / Section / Page, rendered from the current path. */
+/** Breadcrumbs: hairline strip under the nav, mono, slash-separated. */
 export function SiteBreadcrumbs() {
   const { pathname } = useLocation();
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length === 0) return null;
 
   return (
-    <Breadcrumb className="mx-auto max-w-6xl px-4 pt-5">
-      <BreadcrumbList className="hud-mono text-[10px] tracking-[0.14em]">
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link to="/" className="text-[#9ec8dc] hover:text-[#7be6fa]">
-              HOME
-            </Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        {segments.map((seg, i) => {
-          const isLast = i === segments.length - 1;
-          const label = CRUMB_LABELS[seg] ?? seg;
-          const to = `/${segments.slice(0, i + 1).join("/")}`;
-          return (
-            <BreadcrumbItem key={to}>
-              <BreadcrumbSeparator className="[&>svg]:size-3 [&>svg]:text-[#48cae4]/50" />
-              {isLast ? (
-                <BreadcrumbPage className="hud-mono text-[10px] font-bold tracking-[0.14em] text-[#d7f4ff]">
-                  {label.toUpperCase()}
-                </BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink asChild>
-                  <Link to={to} className="text-[#9ec8dc] hover:text-[#7be6fa]">
-                    {label.toUpperCase()}
-                  </Link>
-                </BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
-          );
-        })}
-      </BreadcrumbList>
-    </Breadcrumb>
+    <div className="border-b border-[var(--fm-line-soft)]">
+      <Breadcrumb className="mx-auto max-w-5xl px-5 py-3">
+        <BreadcrumbList className="fm-mono text-[10px] tracking-[0.2em] uppercase">
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/" className="text-[var(--fm-mut)] hover:text-[var(--fm-ink)]">
+                Home
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          {segments.map((seg, i) => {
+            const isLast = i === segments.length - 1;
+            const label = CRUMB_LABELS[seg] ?? seg;
+            const to = `/${segments.slice(0, i + 1).join("/")}`;
+            return (
+              <BreadcrumbItem key={to}>
+                <BreadcrumbSeparator className="[&>svg]:size-3 [&>svg]:text-[var(--fm-line)]" />
+                {isLast ? (
+                  <BreadcrumbPage className="fm-mono text-[10px] tracking-[0.2em] text-[var(--fm-ink)] uppercase">
+                    {label}
+                  </BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link to={to} className="text-[var(--fm-mut)] hover:text-[var(--fm-ink)]">
+                      {label}
+                    </Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            );
+          })}
+        </BreadcrumbList>
+      </Breadcrumb>
+    </div>
   );
 }
 
-/** Footer with internal links to every public route. */
+/** Footer: typeset colophon with numbered link groups. */
 export function SiteFooter() {
   return (
-    <footer className="mt-16 border-t border-[#48cae4]/12 px-4 py-8">
-      <div className="mx-auto grid max-w-6xl gap-6 sm:grid-cols-[1fr_auto]">
+    <footer className="border-t border-[var(--fm-line)] bg-[var(--fm-bg)]">
+      <div className="mx-auto grid max-w-5xl gap-10 px-5 py-12 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <div className="flex items-center gap-2">
-            <Snowflake className="size-4 text-[#48cae4]" />
-            <span className="hud-mono text-[10px] font-bold tracking-[0.18em] text-[#d7f4ff]">
-              POLARIS · EXPEDITION COMMAND
+          <div className="flex items-baseline gap-3">
+            <span className="fm-mono text-[13px] font-semibold tracking-[0.28em] text-[var(--fm-ink)]">
+              POLARIS
+            </span>
+            <span className="fm-serif text-sm italic text-[var(--fm-mut)]">
+              expedition command
             </span>
           </div>
-          <p className="mt-2 max-w-md text-[11px] leading-relaxed text-[#9ec8dc]/70">
-            Offline-first logistics &amp; asset management for polar expedition stations.
-            Simulated field environment — all telemetry is generated on-device.
+          <p className="fm-body mt-3 max-w-sm text-[13px] leading-relaxed">
+            A logistics and asset-management system for polar research stations, built
+            on the assumption that the network is a luxury. All field telemetry in this
+            build is simulated on-device.
           </p>
         </div>
-        <nav aria-label="Footer" className="flex flex-wrap items-start gap-x-6 gap-y-2">
-          <FooterLink to="/" icon={Snowflake}>Home</FooterLink>
-          <FooterLink to="/about" icon={Info}>About</FooterLink>
-          <FooterLink to="/contact" icon={Mail}>Contact</FooterLink>
+
+        <nav aria-label="Site">
+          <p className="fm-label mb-3">Site</p>
+          <ul className="space-y-2">
+            <li><FooterLink to="/">Index</FooterLink></li>
+            <li><FooterLink to="/about">About</FooterLink></li>
+            <li><FooterLink to="/contact">Contact</FooterLink></li>
+          </ul>
+        </nav>
+
+        <nav aria-label="Access">
+          <p className="fm-label mb-3">Access</p>
+          <ul className="space-y-2">
+            <li><FooterLink to="/auth">Sign in</FooterLink></li>
+            <li><FooterLink to="/dashboard">Command deck</FooterLink></li>
+          </ul>
+          <p className="fm-dim mt-4 text-[12px] leading-relaxed">
+            The command deck requires an account issued by the station master.
+          </p>
         </nav>
       </div>
-      <div className="mx-auto mt-6 flex max-w-6xl flex-wrap items-center justify-between gap-2">
-        <span className="hud-mono text-[9px] tracking-[0.18em] text-[#9ec8dc]/50">
-          v4.2 · SIMULATED FIELD ENVIRONMENT
-        </span>
-        <span className="hud-mono text-[9px] tracking-[0.18em] text-[#9ec8dc]/50">
-          SECTOR 70S · ENGINE v4.2
-        </span>
+
+      <div className="border-t border-[var(--fm-line-soft)]">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-baseline justify-between gap-2 px-5 py-4">
+          <span className="fm-dim fm-mono text-[10px] tracking-[0.18em] uppercase">
+            POLARIS v4.2 — simulated field build
+          </span>
+          <span className="fm-serif text-[12px] italic text-[var(--fm-mut)]">
+            Set in Newsreader, Inter &amp; JetBrains Mono
+          </span>
+        </div>
       </div>
     </footer>
   );
 }
 
-function FooterLink({
-  to,
-  icon: Icon,
-  children,
-}: {
-  to: string;
-  icon: typeof Snowflake;
-  children: string;
-}) {
+function FooterLink({ to, children }: { to: string; children: string }) {
   return (
     <Link
       to={to}
-      className="hud-mono flex items-center gap-1.5 text-[10px] font-bold tracking-[0.14em] text-[#9ec8dc] transition-colors hover:text-[#7be6fa]"
+      className="fm-mono text-[12px] tracking-[0.06em] text-[var(--fm-ink-dim)] transition-colors hover:text-[var(--fm-accent)]"
     >
-      <Icon className="size-3.5 text-[#48cae4]/70" />
-      {children.toUpperCase()}
+      {children}
     </Link>
   );
 }
@@ -185,7 +197,7 @@ function FooterLink({
 /** Standard layout for every public page: nav, breadcrumbs, content, footer. */
 export function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="polar-hud flex min-h-screen flex-col">
+    <div className="fm flex min-h-screen flex-col">
       <SiteNav />
       <SiteBreadcrumbs />
       <main className="flex-1">{children}</main>

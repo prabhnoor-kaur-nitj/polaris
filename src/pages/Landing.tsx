@@ -1,136 +1,121 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { SiteLayout } from "@/components/site/SiteChrome";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  CloudOff,
-  Map,
-  Package,
-  Radio,
-  Route as RouteIcon,
-  Satellite,
-  ShieldAlert,
-  Snowflake,
-  Star,
-  Thermometer,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
 
-const FEATURES = [
+const SYSTEMS = [
   {
-    icon: Map,
-    title: "Tactical Personnel Radar",
-    body: "Live grid of every crew member and vehicle on the ice — click any marker for vitals, battery, oxygen and last ping.",
+    num: "1.1",
+    title: "Personnel radar",
+    body: "Every crew member and vehicle sits on one top-down grid of the sector. Select a marker to read its position, battery, oxygen and the time of its last ping — the three numbers a watch-keeper actually asks for.",
+    spec: "MAITRI · BHARATI · DEPOT F1 · CACHE M2 · POST R7",
   },
   {
-    icon: Package,
-    title: "Supply Chain Node",
-    body: "Rations, jet fuel, heating oil, solar arrays and medical kits with CRITICAL / OPTIMAL / DEPLETED threshold flags.",
+    num: "1.2",
+    title: "Supply node",
+    body: "Rations, jet fuel, heating oil, solar arrays and medical kits carry threshold flags — CRITICAL, OPTIMAL, DEPLETED. Movements are logged as they happen, not reconciled at the end of the week.",
+    spec: "THRESHOLDS CHECKED ON EVERY LEDGER ENTRY",
   },
   {
-    icon: RouteIcon,
-    title: "Expedition Route Planning",
-    body: "Multi-waypoint traverses with fuel, cold-factor and ETA math for crew size, payload and temperature drop.",
+    num: "1.3",
+    title: "Route planning",
+    body: "A three-step traverse planner: waypoints first, then crew, payload and expected temperature drop. The calculator returns fuel with a 25% cold reserve and issues a GO or NO-GO per vehicle.",
+    spec: "COLD FACTOR · PAYLOAD · +25% RESERVE",
   },
   {
-    icon: CloudOff,
-    title: "Offline-First Engine",
-    body: "Every action writes to local storage first and queues sync events — built for zero-internet field stations.",
+    num: "1.4",
+    title: "SOS dispatch",
+    body: "A distress call is a single button. The system picks the nearest available vehicle, derives distance, route and ETA under current conditions, and shows the uplink state for the active network mode.",
+    spec: "COMPUTED LOCALLY · NO LINK REQUIRED",
   },
   {
-    icon: ShieldAlert,
-    title: "SOS Emergency Solve",
-    body: "One-tap MAYDAY with instant nearest-asset dispatch calculation, ETA and broadcast state.",
-  },
-  {
-    icon: Radio,
-    title: "Mesh / Satellite Modes",
-    body: "Simulate SATCOM, VHF mesh and offline local-storage modes and watch the sync queue adapt in real time.",
+    num: "1.5",
+    title: "Offline engine",
+    body: "Writes land in local storage first and queue for sync. When a satellite or VHF window opens, the queue drains in order and the pending badge clears. Nothing is re-keyed; nothing is lost to a dropped link.",
+    spec: "SATCOM · VHF MESH · LOCAL STORAGE",
   },
 ];
 
-const REVIEWS = [
+const REPORTS = [
   {
+    quote:
+      "The first logistics tool that survived a full whiteout week. The queue drained the moment our satellite window opened — nothing lost, nothing re-keyed.",
     name: "Cdr. A. Sharma",
-    role: "Station Master · Maitri",
-    rating: 5,
-    quote:
-      "The first logistics tool that survived a full whiteout week. The sync queue drained the moment our SATCOM window opened — nothing lost, nothing re-keyed.",
+    role: "Station master, Maitri",
+    stars: "★★★★★",
   },
   {
+    quote:
+      "The heating-oil flag tripped three days before the paper ledger would have caught it. That single call is a season saved.",
     name: "R. Iyer",
-    role: "Logistics Officer · Bharati",
-    rating: 5,
-    quote:
-      "Threshold flags caught our heating oil hitting CRITICAL three days before the manual ledger would have. That call is a season saved.",
+    role: "Logistics officer, Bharati",
+    stars: "★★★★★",
   },
   {
+    quote:
+      "During the medevac drill I had the nearest vehicle and its ETA before I finished the radio call. That is the whole product for me.",
     name: "Dr. M. Kaur",
-    role: "Medical Lead · Maitri",
-    rating: 4,
-    quote:
-      "Crew vitals and supplies on one radar. During the medevac drill I had the nearest vehicle and ETA before I finished the radio call.",
+    role: "Medical lead, Maitri",
+    stars: "★★★★☆",
   },
   {
+    quote:
+      "GO/NO-GO per vehicle stopped an underpowered snowcat attempt at minus forty-one. The maths is conservative, which is what you want on ice.",
     name: "J. Okafor",
-    role: "Traverse Commander · Fuel Run F1",
-    rating: 5,
-    quote:
-      "Cold-factor and payload math is the real deal. GO/NO-GO per vehicle stopped an underpowered snowcat attempt at −41°C.",
+    role: "Traverse commander, Fuel Run F1",
+    stars: "★★★★★",
   },
   {
+    quote:
+      "VHF mode genuinely slows the sync the way the real link does. Training drills finally feel like the field instead of a demo.",
     name: "S. Verma",
-    role: "Comms Engineer · Bharati",
-    rating: 4,
-    quote:
-      "VHF mesh mode slowing the sync queue is exactly how the real link behaves. Training drills finally feel like the ice.",
+    role: "Comms engineer, Bharati",
+    stars: "★★★★☆",
   },
   {
-    name: "L. Fischer",
-    role: "Winter-Over Scientist · R7 Post",
-    rating: 5,
     quote:
-      "I joined for the offline promise, skeptical. The tactical map won over the whole winter-over crew in a week — and it never touched the network once.",
+      "We ran it offline for a week out of stubbornness. It never asked for the network once.",
+    name: "L. Fischer",
+    role: "Winter-over scientist, Post R7",
+    stars: "★★★★★",
   },
 ];
 
 const FAQS = [
   {
-    q: "How does POLARIS work without internet access?",
-    a: "Every write is local-first: inventory movements, route plans and status updates are applied on your device instantly and queued for sync. When a satellite or VHF mesh link returns, the queue drains in order and the pending badge clears. All three link modes can be simulated from the top bar.",
+    q: "How does it work without internet access?",
+    a: "Every write is local-first: inventory movements, route plans and status changes are applied on the device immediately and held in a sync queue. When a link returns, the queue drains in order and the pending badge clears. All three link modes — satellite, VHF mesh, fully offline — can be exercised from the top bar.",
   },
   {
     q: "Who can grant access to a deployment?",
-    a: "Access is master-only provisioning. The first commander to initialize the system becomes the master; every other operator account is created by the master from the Access Control panel with an email and a temporary password. Operator, observer and supervisor roles can be changed or revoked at any time, which also terminates that account's live sessions.",
+    a: "Access is master-only provisioning. The first commander to initialize a system becomes its master; every other account is issued by the master from the Access Control panel with an email and a temporary password. Roles can be changed or revoked later, which also terminates that account's live sessions.",
   },
   {
-    q: "What does the SOS dispatch solve actually compute?",
-    a: "When a distress call is raised, POLARIS computes the nearest available rescue vehicle from the live asset grid, derives distance, route and ETA under current conditions, and shows the uplink state for the active network mode — all computed locally, no link required.",
+    q: "What does the SOS solve actually compute?",
+    a: "It reads the live asset grid, selects the nearest available rescue vehicle, and derives distance, route and ETA under current conditions. The uplink state shown reflects the active network mode. All of it is computed on the device — the drill works with the link switched off.",
   },
   {
-    q: "Which stations and vehicles are modeled?",
-    a: "The build ships with a simulated Maitri / Bharati sector grid: the two stations plus fuel depots, medical caches and radar posts. Personnel, snow vehicles and cargo nodes are draggable markers carrying live vitals, battery and oxygen telemetry.",
+    q: "Which stations and assets are modeled?",
+    a: "This build ships a simulated Maitri / Bharati sector: the two stations, a fuel depot, a medical cache and a radar post, plus personnel and vehicles as draggable markers with live vitals. The data model is deliberately small so the whole thing runs on a station laptop.",
   },
   {
-    q: "Is my station's data sent anywhere?",
-    a: "No. POLARIS is designed for air-gapped deployments — all expedition data persists on-device. This public site sets no tracking cookies and runs no third-party analytics; the only server writes come from the contact form, readable only by the station master.",
+    q: "Where does the data go?",
+    a: "Nowhere. Expedition data persists on the device the watch is run from. This public site sets no tracking cookies and runs no third-party analytics; the only server writes come from the contact form, and those are readable only by the station master.",
   },
 ];
 
-function Stars({ rating }: { rating: number }) {
+function Stars({ value }: { value: string }) {
   return (
-    <div className="flex items-center gap-0.5" aria-label={`${rating} out of 5 stars`}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <Star
-          key={i}
-          className={cn("size-3.5", i < rating ? "fill-[#ffd166] text-[#ffd166]" : "text-white/15")}
-        />
-      ))}
-    </div>
+    <span className="fm-mono text-[13px] tracking-[0.1em] text-[var(--fm-accent)]" aria-label={`${value.length ? value : ""} rating`}>
+      {value}
+      <span className="sr-only"> out of five</span>
+    </span>
   );
 }
 
@@ -139,249 +124,168 @@ export default function Landing() {
 
   return (
     <SiteLayout>
-      {/* Hero */}
-      <section className="relative mx-auto max-w-6xl px-4 pt-14 pb-12 sm:pt-20">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 right-0 size-96 rounded-full bg-[#48cae4]/8 blur-3xl" />
-          <div className="absolute top-40 -left-24 size-80 rounded-full bg-[#00b4d8]/8 blur-3xl" />
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative"
-        >
-          <div className="mb-5 flex flex-wrap items-center gap-2">
-            <span className="hud-mono inline-flex items-center gap-2 rounded-md border border-[#00f5d4]/40 bg-[#00f5d4]/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-[#00f5d4]">
-              <Satellite className="size-3.5" /> OFFLINE-FIRST FIELD GRID
-            </span>
-            <span className="hud-mono inline-flex items-center gap-2 rounded-md border border-[#48cae4]/30 bg-[#48cae4]/8 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-[#7be6fa]">
-              <Thermometer className="size-3.5" /> −41°C OPERATIONAL
-            </span>
-            <span className="hud-mono inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-[#9ec8dc]">
-              SIMULATED FIELD BUILD
-            </span>
-          </div>
-
-          <h1 className="max-w-3xl text-4xl leading-[1.05] font-extrabold tracking-tight text-[#eaf8ff] sm:text-6xl">
-            Polar expedition command,{" "}
-            <span className="bg-gradient-to-r from-[#48cae4] to-[#00f5d4] bg-clip-text text-transparent">
-              engineered for the ice.
-            </span>
-          </h1>
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-[#9ec8dc] sm:text-lg">
-            The integrated logistics and asset management HUD for Antarctic
-            stations. Track personnel radar, run the supply node, plan traverses and fire
-            emergency solves — all on a tactical grid that keeps working when the link
-            doesn't.
-          </p>
-
-          {/* CTA above the fold */}
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button
-              asChild
-              size="lg"
-              className="hud-mono h-12 gap-2 border border-[#48cae4]/50 bg-[#48cae4]/15 px-6 text-[11px] font-bold tracking-[0.18em] text-[#7be6fa] hover:bg-[#48cae4]/25"
-            >
-              <Link to="/auth">
-                ENTER COMMAND <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="hud-mono h-12 border-[#00f5d4]/40 bg-transparent px-6 text-[11px] font-bold tracking-[0.18em] text-[#00f5d4] hover:bg-[#00f5d4]/10 hover:text-[#00f5d4]"
-            >
-              <Link to="/contact">CONTACT COMMAND</Link>
-            </Button>
-            <a
-              href="#faq"
-              className="hud-mono rounded-md border border-white/15 bg-white/5 px-5 py-3 text-[11px] font-bold tracking-[0.18em] text-[#9ec8dc] transition-colors hover:bg-white/10"
-            >
-              FAQ
-            </a>
-          </div>
-
-          {/* Stat chips */}
-          <div className="mt-10 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              { k: "2", v: "Stations linked" },
-              { k: "24/7", v: "Mesh telemetry" },
-              { k: "100%", v: "Local-first writes" },
-              { k: "<1s", v: "Optimistic UI" },
-            ].map((s) => (
-              <div key={s.v} className="hud-panel px-4 py-3">
-                <div className="hud-mono text-xl font-bold text-[#7be6fa]">{s.k}</div>
-                <div className="hud-label mt-0.5">{s.v}</div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Radar strip */}
-      <section className="border-y border-[#48cae4]/12 bg-[#0a1024]/60">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-4 py-4">
-          {["MAITRI", "BHARATI", "FUEL DEPOT F1", "MEDICAL CACHE M2", "RADAR POST R7"].map(
-            (n, i) => (
-              <span key={n} className="flex items-center gap-2">
-                <span
-                  className={cn(
-                    "size-2 rounded-full",
-                    i % 3 === 0 ? "bg-[#00f5d4]" : "bg-[#48cae4]",
-                  )}
-                  style={{ boxShadow: "0 0 10px currentColor" }}
-                />
-                <span className="hud-mono text-[10px] tracking-[0.22em] text-[#9ec8dc]">{n}</span>
-              </span>
-            ),
-          )}
-        </div>
-      </section>
-
-      {/* Feature grid */}
-      <section id="systems" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
+      {/* ——— Opening ——— */}
+      <section className="mx-auto max-w-5xl px-5 pt-16 pb-14 sm:pt-24">
+        <div className="fm-rise grid gap-12 lg:grid-cols-[1fr_260px]">
           <div>
-            <div className="hud-label mb-1">System Panels</div>
-            <h2 className="text-2xl font-bold tracking-tight text-[#eaf8ff] sm:text-3xl">
-              One HUD. Every expedition system.
-            </h2>
+            <p className="fm-label">Operations manual · Revision 4.2</p>
+            <h1 className="fm-h1 mt-5 max-w-2xl">
+              Logistics software for places where{" "}
+              <em className="fm-serif italic text-[var(--fm-accent)]">the network is a luxury.</em>
+            </h1>
+            <p className="fm-body mt-6 max-w-xl text-[15.5px]">
+              POLARIS runs the watch for a polar research station: who is on the ice,
+              what is in the stores, which vehicle can reach a casualty before dark.
+              It assumes the satellite pass may not come, and works anyway.
+            </p>
+
+            <div className="mt-9 flex flex-wrap items-center gap-4">
+              <Link to="/auth" className="fm-btn fm-btn-solid">
+                Enter command <ArrowRight className="size-3.5" />
+              </Link>
+              <Link to="/contact" className="fm-btn fm-btn-quiet">
+                Contact command
+              </Link>
+              <a href="#systems" className="fm-mono text-[11px] tracking-[0.16em] text-[var(--fm-mut)] uppercase transition-colors hover:text-[var(--fm-ink)]">
+                Read the systems ↓
+              </a>
+            </div>
           </div>
-          <span className="hud-mono text-[10px] tracking-[0.18em] text-[#9ec8dc]/60">
-            SECTOR 70S · ENGINE v4.2
+
+          {/* Marginalia column */}
+          <aside className="hidden lg:block">
+            <div className="border-l border-[var(--fm-line)] pl-5">
+              <p className="fm-label mb-4">Defined</p>
+              <dl className="space-y-4">
+                {[
+                  ["Watch", "One duty cycle of station operations."],
+                  ["Sync queue", "Writes held on-device until a link opens."],
+                  ["Cold factor", "Fuel penalty applied below −30 °C."],
+                  ["The master", "Sole issuer of portal accounts."],
+                ].map(([t, d]) => (
+                  <div key={t}>
+                    <dt className="fm-mono text-[11px] tracking-[0.12em] text-[var(--fm-ink)] uppercase">{t}</dt>
+                    <dd className="fm-dim mt-0.5 text-[12px] leading-relaxed">{d}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </aside>
+        </div>
+
+        <hr className="fm-rule mt-16" />
+      </section>
+
+      {/* ——— §01 Systems ——— */}
+      <section id="systems" className="mx-auto max-w-5xl scroll-mt-20 px-5 pb-16">
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="fm-h2">
+            <span className="fm-num mr-3">§01</span>Five systems, one console
+          </h2>
+          <span className="fm-dim fm-mono hidden text-[10px] tracking-[0.18em] uppercase sm:inline">
+            Sector 70S
           </span>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.4, delay: i * 0.05 }}
-            >
-              <Card className="hud-panel h-full border-[#48cae4]/15 bg-transparent shadow-none">
-                <CardContent className="p-5">
-                  <span className="mb-3 grid size-10 place-items-center rounded-lg border border-[#48cae4]/30 bg-[#48cae4]/10 text-[#48cae4]">
-                    <f.icon className="size-5" />
-                  </span>
-                  <h3 className="hud-mono text-[13px] font-bold tracking-[0.08em] text-[#d7f4ff]">
-                    {f.title}
-                  </h3>
-                  <p className="mt-2 text-[13px] leading-relaxed text-[#9ec8dc]">{f.body}</p>
-                </CardContent>
-              </Card>
-            </motion.div>
+        <div className="mt-8">
+          {SYSTEMS.map((s) => (
+            <article key={s.num} className="fm-row grid gap-3 py-6 sm:grid-cols-[70px_1fr]">
+              <div>
+                <span className="fm-num">{s.num}</span>
+              </div>
+              <div className="max-w-2xl">
+                <h3 className="fm-h3 fm-serif text-lg font-normal">{s.title}</h3>
+                <p className="fm-body mt-1.5 text-[14px] leading-relaxed">{s.body}</p>
+                <p className="fm-dim fm-mono mt-2.5 text-[10px] tracking-[0.18em] uppercase">{s.spec}</p>
+              </div>
+            </article>
           ))}
         </div>
       </section>
 
-      {/* Field reports (reviews) */}
-      <section className="border-y border-[#48cae4]/12 bg-[#0a1024]/50">
-        <div className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16" id="reviews">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <div className="hud-label mb-1">Field Reports</div>
-              <h2 className="text-2xl font-bold tracking-tight text-[#eaf8ff] sm:text-3xl">
-                Reviewed by the crews who ran the watch.
-              </h2>
-            </div>
-            <span className="hud-mono text-[10px] tracking-[0.18em] text-[#9ec8dc]/60">
-              6 REPORTS · WINTER-OVER CYCLE 42
+      {/* ——— §02 Field reports ——— */}
+      <section className="border-y border-[var(--fm-line)] bg-[var(--fm-paper)]">
+        <div className="mx-auto max-w-5xl px-5 py-16">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="fm-h2">
+              <span className="fm-num mr-3">§02</span>Field reports
+            </h2>
+            <span className="fm-dim fm-mono hidden text-[10px] tracking-[0.18em] uppercase sm:inline">
+              Winter-over cycle 42
             </span>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {REVIEWS.map((r, i) => (
-              <motion.figure
-                key={r.name}
-                initial={{ opacity: 0, y: 14 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.4, delay: i * 0.04 }}
-                className="hud-panel flex flex-col gap-3 p-5"
-              >
-                <Stars rating={r.rating} />
-                <blockquote className="text-[13px] leading-relaxed text-[#d7f4ff]">
+          <div className="mt-8 grid gap-x-12 gap-y-10 sm:grid-cols-2">
+            {REPORTS.map((r) => (
+              <figure key={r.name}>
+                <Stars value={r.stars} />
+                <blockquote className="fm-serif mt-3 text-[17px] leading-relaxed text-[var(--fm-ink)]">
                   “{r.quote}”
                 </blockquote>
-                <figcaption className="mt-auto border-t border-[#48cae4]/10 pt-3">
-                  <div className="hud-mono text-[11px] font-bold tracking-[0.1em] text-[#7be6fa]">
-                    {r.name}
-                  </div>
-                  <div className="hud-label mt-0.5">{r.role}</div>
+                <figcaption className="mt-3">
+                  <span className="fm-mono text-[11px] tracking-[0.12em] text-[var(--fm-ink)] uppercase">{r.name}</span>
+                  <span className="fm-dim fm-mono ml-2 text-[10px] tracking-[0.12em] uppercase">— {r.role}</span>
                 </figcaption>
-              </motion.figure>
+              </figure>
             ))}
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="mx-auto max-w-3xl scroll-mt-20 px-4 py-16">
-        <div className="mb-8 text-center">
-          <div className="hud-label mb-1">Briefing Deck</div>
-          <h2 className="text-2xl font-bold tracking-tight text-[#eaf8ff] sm:text-3xl">
-            Frequently asked questions
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#9ec8dc]">
-            Everything a station commander asks before taking the first watch.
-          </p>
-        </div>
-        <Accordion type="single" collapsible defaultValue="faq-0" className="space-y-3">
+      {/* ——— §03 Questions ——— */}
+      <section className="mx-auto max-w-3xl px-5 py-16">
+        <h2 className="fm-h2">
+          <span className="fm-num mr-3">§03</span>Questions before a first watch
+        </h2>
+
+        <Accordion type="single" collapsible defaultValue="q-0" className="mt-8">
           {FAQS.map((f, i) => (
-            <AccordionItem
-              key={f.q}
-              value={`faq-${i}`}
-              className="hud-panel border-none px-5 py-1"
-            >
-              <AccordionTrigger className="hud-mono py-4 text-left text-[12px] font-bold tracking-[0.08em] text-[#d7f4ff] hover:no-underline [&>svg]:text-[#48cae4]">
-                {f.q}
+            <AccordionItem key={f.q} value={`q-${i}`} className="border-[var(--fm-line)]">
+              <AccordionTrigger className="py-5 text-left hover:no-underline [&>svg]:text-[var(--fm-mut)]">
+                <span className="fm-num mr-3 text-[13px]">0{i + 1}</span>
+                <span className="fm-h3 text-[15px]">{f.q}</span>
               </AccordionTrigger>
-              <AccordionContent className="pb-4 text-[13px] leading-relaxed text-[#9ec8dc]">
+              <AccordionContent className="fm-body pb-5 pl-8 text-[14px] leading-relaxed">
                 {f.a}
               </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
+
+        <p className="fm-note mt-8 text-[13px] leading-relaxed">
+          Anything else, ask directly — the{" "}
+          <Link to="/contact" className="fm-link">
+            contact page
+          </Link>{" "}
+          reaches the operations desk.
+        </p>
       </section>
 
-      {/* Final CTA */}
-      <section className="mx-auto max-w-6xl px-4 pb-20">
-        <div className="hud-panel relative overflow-hidden px-6 py-10 text-center sm:px-12">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -top-20 left-1/2 size-72 -translate-x-1/2 rounded-full bg-[#48cae4]/10 blur-3xl" />
+      {/* ——— §04 Access ——— */}
+      <section className="border-t border-[var(--fm-line)] bg-[var(--fm-paper)]">
+        <div className="mx-auto grid max-w-5xl gap-10 px-5 py-16 lg:grid-cols-[1fr_auto]">
+          <div className="max-w-xl">
+            <h2 className="fm-h2">
+              <span className="fm-num mr-3">§04</span>Taking the first watch
+            </h2>
+            <p className="fm-body mt-4 text-[14.5px] leading-relaxed">
+              A deployment is initialized once, by one person. That commander becomes
+              the system master and issues every account afterwards — operators,
+              observers, supervisors. There is no open sign-up, by design: on a real
+              station, the roster is short and known.
+            </p>
+            <p className="fm-dim mt-3 text-[13px] leading-relaxed">
+              This instance runs on simulated data. Nothing you do here touches a real
+              station, and no expedition data leaves the device.
+            </p>
           </div>
-          <Snowflake className="mx-auto size-8 text-[#48cae4]" />
-          <h2 className="mt-4 text-2xl font-bold tracking-tight text-[#eaf8ff] sm:text-3xl">
-            The ice doesn't wait. Neither should your data.
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#9ec8dc]">
-            Sign in to the command deck and run a simulated expedition watch — personnel
-            radar, supply thresholds, route planning and emergency drills included.
-          </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <Button
-              asChild
-              size="lg"
-              className="hud-mono h-12 gap-2 border border-[#00f5d4]/50 bg-[#00f5d4]/15 px-7 text-[11px] font-bold tracking-[0.18em] text-[#00f5d4] hover:bg-[#00f5d4]/25"
-            >
-              <Link to="/auth">
-                ENTER COMMAND <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="hud-mono h-12 border-white/15 bg-transparent px-6 text-[11px] font-bold tracking-[0.18em] text-[#9ec8dc] hover:bg-white/5 hover:text-[#d7f4ff]"
-            >
-              <Link to="/contact">CONTACT COMMAND</Link>
-            </Button>
+          <div className="flex flex-col justify-center gap-3">
+            <Link to="/auth" className="fm-btn fm-btn-solid justify-center">
+              Enter command
+            </Link>
+            <Link to="/about" className="fm-btn fm-btn-quiet justify-center">
+              About the project
+            </Link>
           </div>
         </div>
       </section>

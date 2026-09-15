@@ -1,34 +1,33 @@
 import { SiteLayout } from "@/components/site/SiteChrome";
-import { Button } from "@/components/ui/button";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { ArrowRight, CloudOff, Radio, ShieldCheck, Snowflake } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
-
-const CREW = [
-  { name: "Cdr. A. Sharma", role: "Station Master · Mission Lead", tag: "MASTER" },
-  { name: "R. Iyer", role: "Logistics & Supply Chain", tag: "OPERATOR" },
-  { name: "Dr. M. Kaur", role: "Medical & Crew Welfare", tag: "SUPERVISOR" },
-  { name: "J. Okafor", role: "Traverse & Route Planning", tag: "OPERATOR" },
-  { name: "S. Verma", role: "Comms, Mesh & SATCOM", tag: "OPERATOR" },
-  { name: "L. Fischer", role: "Field Telemetry & Sensors", tag: "OBSERVER" },
-];
 
 const PRINCIPLES = [
   {
-    icon: CloudOff,
-    title: "Offline is the default",
-    body: "Antarctica doesn't negotiate on bandwidth. Every POLARIS feature works with the network switch in the OFFLINE position — that's not a degradation, it's the design baseline.",
+    num: "a.",
+    title: "Offline is the baseline, not the fallback",
+    body: "Antarctica does not negotiate on bandwidth. Every POLARIS feature is exercised with the network switch in the OFFLINE position during testing — that is the design condition, not a degraded mode.",
   },
   {
-    icon: Radio,
+    num: "b.",
     title: "One grid, every asset",
-    body: "People, vehicles, fuel, medicine and power live on the same tactical map, because on the ice a missing reading in any one of them is an emergency in all of them.",
+    body: "People, vehicles, fuel, medicine and power share the same tactical map. On the ice, a missing reading in any one of them becomes an emergency in all of them within hours.",
   },
   {
-    icon: ShieldCheck,
-    title: "Master-controlled access",
-    body: "No open sign-ups. A single station master provisions every account, and role changes revoke live sessions instantly — the same chain of command as the station itself.",
+    num: "c.",
+    title: "The roster is short and known",
+    body: "There is no open sign-up. One master provisions every account and can revoke them, terminating live sessions immediately — the same chain of command as the station itself.",
   },
+];
+
+const CREW = [
+  { name: "Cdr. A. Sharma", role: "Station master · mission lead", tag: "Master" },
+  { name: "R. Iyer", role: "Logistics & supply chain", tag: "Operator" },
+  { name: "Dr. M. Kaur", role: "Medical & crew welfare", tag: "Supervisor" },
+  { name: "J. Okafor", role: "Traverse & route planning", tag: "Operator" },
+  { name: "S. Verma", role: "Comms, mesh & SATCOM", tag: "Operator" },
+  { name: "L. Fischer", role: "Field telemetry & sensors", tag: "Observer" },
 ];
 
 export default function About() {
@@ -36,120 +35,103 @@ export default function About() {
 
   return (
     <SiteLayout>
-      <section className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
-        <span className="hud-mono inline-flex items-center gap-2 rounded-md border border-[#48cae4]/30 bg-[#48cae4]/8 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-[#7be6fa]">
-          <Snowflake className="size-3.5" /> MISSION BRIEFING
-        </span>
-        <h1 className="mt-4 max-w-3xl text-3xl font-extrabold tracking-tight text-[#eaf8ff] sm:text-5xl">
-          Built for the stations where the{" "}
-          <span className="bg-gradient-to-r from-[#48cae4] to-[#00f5d4] bg-clip-text text-transparent">
-            link never comes first.
-          </span>
+      <section className="mx-auto max-w-5xl px-5 py-14 sm:py-20">
+        <p className="fm-label">Dossier · POLARIS project</p>
+        <h1 className="fm-h1 mt-5 max-w-3xl">
+          Built for stations where{" "}
+          <em className="fm-serif italic text-[var(--fm-accent)]">
+            the link never comes first.
+          </em>
         </h1>
-        <p className="mt-5 max-w-2xl text-base leading-relaxed text-[#9ec8dc]">
-          POLARIS | Expedition Command is a tactical logistics and asset-management HUD for
-          polar research stations. It exists for one reason: during a whiteout, logistics
-          software that needs the internet is not software at all. Every write lands on your
-          device first, syncs when a window opens, and never blocks the operator.
-        </p>
+        <div className="mt-8 max-w-2xl space-y-5 text-[15px] leading-relaxed">
+          <p className="fm-body">
+            POLARIS began as a question from a winter-over crew: why does every piece of
+            logistics software we are handed assume we can see a satellite? During a
+            whiteout, a tool that needs the internet is not a tool — it is a liability
+            with a login screen.
+          </p>
+          <p className="fm-body">
+            So the system was written backwards from the worst week of the season: no
+            link, no resupply, four people awake and one decision that matters. Every
+            write lands on the device first, syncs when a window opens, and never
+            blocks the operator standing in front of it.
+          </p>
+          <p className="fm-dim">
+            This public build is a simulated field environment — a full station model
+            with generated telemetry, safe to drill against.
+          </p>
+        </div>
       </section>
 
-      {/* Team photo */}
-      <section className="mx-auto max-w-6xl px-4">
-        <figure className="hud-panel overflow-hidden">
-          <img
-            src="/team-photo.svg"
-            alt="The POLARIS expedition team — six crew members standing in front of an Antarctic research station under an aurora sky"
-            className="aspect-[900/440] w-full object-cover"
-            loading="lazy"
-          />
-          <figcaption className="border-t border-[#48cae4]/10 px-4 py-3">
-            <span className="hud-mono text-[10px] tracking-[0.16em] text-[#9ec8dc]">
-              WINTER-OVER CREW · CYCLE 42 · MAITRI STATION
+      {/* Team plate */}
+      <section className="mx-auto max-w-5xl px-5 pb-16">
+        <figure>
+          <div className="fm-panel overflow-hidden">
+            <img
+              src="/team-photo.svg"
+              alt="The POLARIS expedition team — six crew members standing in front of an Antarctic research station under an aurora sky"
+              className="aspect-[900/440] w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+          <figcaption className="mt-3 flex flex-wrap items-baseline justify-between gap-2">
+            <span className="fm-dim fm-mono text-[10px] tracking-[0.18em] uppercase">
+              Plate 1 — Winter-over crew, cycle 42, Maitri station
+            </span>
+            <span className="fm-serif text-[12px] italic text-[var(--fm-mut)]">
+              Illustration: station north face, 21:40 local
             </span>
           </figcaption>
         </figure>
       </section>
 
       {/* Principles */}
-      <section className="mx-auto max-w-6xl px-4 py-14">
-        <h2 className="text-2xl font-bold tracking-tight text-[#eaf8ff] sm:text-3xl">
-          Operating principles
+      <section className="mx-auto max-w-5xl px-5 pb-16">
+        <h2 className="fm-h2">
+          <span className="fm-num mr-3">§02</span>Operating principles
         </h2>
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="mt-8 max-w-3xl">
           {PRINCIPLES.map((p) => (
-            <div key={p.title} className="hud-panel p-5">
-              <span className="mb-3 grid size-10 place-items-center rounded-lg border border-[#48cae4]/30 bg-[#48cae4]/10 text-[#48cae4]">
-                <p.icon className="size-5" />
-              </span>
-              <h3 className="hud-mono text-[13px] font-bold tracking-[0.08em] text-[#d7f4ff]">
-                {p.title}
-              </h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-[#9ec8dc]">{p.body}</p>
-            </div>
+            <article key={p.num} className="fm-row grid gap-2 py-6 sm:grid-cols-[70px_1fr]">
+              <span className="fm-num">{p.num}</span>
+              <div className="max-w-2xl">
+                <h3 className="fm-h3 fm-serif text-lg font-normal">{p.title}</h3>
+                <p className="fm-body mt-1.5 text-[14px] leading-relaxed">{p.body}</p>
+              </div>
+            </article>
           ))}
         </div>
       </section>
 
-      {/* Crew roster */}
-      <section className="mx-auto max-w-6xl px-4 pb-14">
-        <h2 className="text-2xl font-bold tracking-tight text-[#eaf8ff] sm:text-3xl">
-          The command crew
+      {/* Roster */}
+      <section className="mx-auto max-w-5xl px-5 pb-20">
+        <h2 className="fm-h2">
+          <span className="fm-num mr-3">§03</span>The command crew
         </h2>
-        <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {CREW.map((c) => (
-            <li key={c.name} className="hud-panel flex items-center gap-3 p-4">
-              <span
-                className={
-                  c.tag === "MASTER"
-                    ? "grid size-10 shrink-0 place-items-center rounded-lg border border-[#00f5d4]/40 bg-[#00f5d4]/10 text-[#00f5d4]"
-                    : "grid size-10 shrink-0 place-items-center rounded-lg border border-[#48cae4]/30 bg-[#48cae4]/8 text-[#7be6fa]"
-                }
-              >
-                <ShieldCheck className="size-4" />
-              </span>
-              <div className="min-w-0">
-                <div className="hud-mono truncate text-[12px] font-bold text-[#d7f4ff]">
-                  {c.name}
-                </div>
-                <div className="hud-label truncate">{c.role}</div>
-              </div>
-              <span className="hud-mono ml-auto rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[8px] font-bold tracking-[0.14em] text-[#9ec8dc]">
-                {c.tag}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <div className="fm-panel mt-8 max-w-3xl overflow-hidden">
+          <ul>
+            {CREW.map((c) => (
+              <li key={c.name} className="fm-row flex flex-wrap items-baseline gap-x-4 gap-y-1 px-5 py-3.5">
+                <span className="fm-mono min-w-0 text-[13px] text-[var(--fm-ink)]">{c.name}</span>
+                <span className="fm-dim flex-1 text-[12.5px]">{c.role}</span>
+                <span className="fm-tag">{c.tag}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-      {/* CTA */}
-      <section className="mx-auto max-w-6xl px-4 pb-16">
-        <div className="hud-panel flex flex-wrap items-center justify-between gap-4 px-6 py-8">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-[#eaf8ff]">
-              Run your station on the same grid.
-            </h2>
-            <p className="mt-1 text-sm text-[#9ec8dc]">
-              File a message to command or sign straight into the simulated command deck.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              asChild
-              className="hud-mono h-11 border border-[#00f5d4]/50 bg-[#00f5d4]/15 px-5 text-[10px] font-bold tracking-[0.18em] text-[#00f5d4] hover:bg-[#00f5d4]/25"
-            >
-              <Link to="/contact">CONTACT COMMAND</Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="hud-mono h-11 border-[#48cae4]/40 bg-transparent px-5 text-[10px] font-bold tracking-[0.18em] text-[#7be6fa] hover:bg-[#48cae4]/10 hover:text-[#7be6fa]"
-            >
-              <Link to="/auth">
-                ENTER COMMAND <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-          </div>
+        {/* Next steps */}
+        <div className="mt-14 flex flex-wrap items-center gap-4 border-t border-[var(--fm-line)] pt-8">
+          <p className="fm-body max-w-md flex-1 text-[14px]">
+            Run your station on the same grid — message the operations desk, or take a
+            simulated watch.
+          </p>
+          <Link to="/contact" className="fm-btn fm-btn-quiet">
+            Contact command
+          </Link>
+          <Link to="/auth" className="fm-btn fm-btn-solid">
+            Enter command <ArrowRight className="size-3.5" />
+          </Link>
         </div>
       </section>
     </SiteLayout>
