@@ -1,5 +1,5 @@
 import { AccessControl } from "@/components/polar/AccessControl";
-import { SiteAnalytics } from "@/components/site/SiteAnalytics";
+import { ContactInbox } from "@/components/site/ContactInbox";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { MarkerInspector } from "@/components/polar/MarkerInspector";
 import { InventoryTab } from "@/components/polar/InventoryTab";
@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePolarStore } from "@/lib/polar/store";
 import { cn } from "@/lib/utils";
 import {
-  BarChart3,
+  Inbox,
   Map,
   Package,
   Route as RouteIcon,
@@ -29,7 +29,7 @@ const TABS: { id: TabId; label: string; icon: typeof Map }[] = [
   { id: "inventory", label: "INVENTORY & SUPPLY NODE", icon: Package },
   { id: "routes", label: "EXPEDITION & ROUTE PLANNING", icon: RouteIcon },
   { id: "access", label: "ACCESS CONTROL", icon: ShieldCheck },
-  { id: "site", label: "SITE ANALYTICS", icon: BarChart3 },
+  { id: "site", label: "CONTACT INBOX", icon: Inbox },
 ];
 
 export default function Dashboard() {
@@ -128,7 +128,7 @@ export default function Dashboard() {
           {tab === "inventory" && <InventoryTab store={store} />}
           {tab === "routes" && <RoutePlannerTab store={store} />}
           {tab === "access" && <AccessControl />}
-          {tab === "site" && <SiteAnalytics />}
+          {tab === "site" && <ContactInbox />}
         </div>
 
         <footer className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-[#48cae4]/10 pt-3">

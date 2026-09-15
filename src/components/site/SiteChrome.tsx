@@ -10,13 +10,12 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Info, Mail, Radio, Snowflake } from "lucide-react";
+import { Info, Mail, Snowflake } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 const NAV_LINKS = [
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
-  { to: "/waitlist", label: "Waitlist" },
 ] as const;
 
 /** Sticky navigation bar with internal links to every public page. */
@@ -83,7 +82,6 @@ export function SiteNav() {
 const CRUMB_LABELS: Record<string, string> = {
   about: "About",
   contact: "Contact",
-  waitlist: "Waitlist",
   "thank-you": "Thank You",
 };
 
@@ -150,7 +148,6 @@ export function SiteFooter() {
           <FooterLink to="/" icon={Snowflake}>Home</FooterLink>
           <FooterLink to="/about" icon={Info}>About</FooterLink>
           <FooterLink to="/contact" icon={Mail}>Contact</FooterLink>
-          <FooterLink to="/waitlist" icon={Radio}>Waitlist</FooterLink>
         </nav>
       </div>
       <div className="mx-auto mt-6 flex max-w-6xl flex-wrap items-center justify-between gap-2">

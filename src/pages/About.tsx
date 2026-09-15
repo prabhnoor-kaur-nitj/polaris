@@ -130,7 +130,7 @@ export default function About() {
               Run your station on the same grid.
             </h2>
             <p className="mt-1 text-sm text-[#9ec8dc]">
-              Join the deployment waitlist or sign straight into the simulated command deck.
+              File a message to command or sign straight into the simulated command deck.
             </p>
           </div>
           <div className="flex gap-3">
@@ -138,7 +138,7 @@ export default function About() {
               asChild
               className="hud-mono h-11 border border-[#00f5d4]/50 bg-[#00f5d4]/15 px-5 text-[10px] font-bold tracking-[0.18em] text-[#00f5d4] hover:bg-[#00f5d4]/25"
             >
-              <Link to="/waitlist">JOIN WAITLIST</Link>
+              <Link to="/contact">CONTACT COMMAND</Link>
             </Button>
             <Button
               asChild

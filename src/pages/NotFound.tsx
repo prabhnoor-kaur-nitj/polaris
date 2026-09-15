@@ -1,13 +1,12 @@
 import { usePageTitle } from "@/hooks/use-page-title";
 import { cn } from "@/lib/utils";
-import { Compass, Info, Mail, Radio, Snowflake } from "lucide-react";
+import { Compass, Info, Mail, Snowflake } from "lucide-react";
 import { Link } from "react-router";
 
 const ESCAPE_ROUTES = [
   { to: "/", label: "HOME", icon: Snowflake },
   { to: "/about", label: "ABOUT", icon: Info },
   { to: "/contact", label: "CONTACT", icon: Mail },
-  { to: "/waitlist", label: "WAITLIST", icon: Radio },
 ] as const;
 
 export default function NotFound() {

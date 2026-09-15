@@ -94,7 +94,7 @@ const REVIEWS = [
     role: "Winter-Over Scientist · R7 Post",
     rating: 5,
     quote:
-      "I joined the waitlist skeptical. The tactical map won over the whole winter-over crew in a week — and it never touched the network once.",
+      "I joined for the offline promise, skeptical. The tactical map won over the whole winter-over crew in a week — and it never touched the network once.",
   },
 ];
 
@@ -117,7 +117,7 @@ const FAQS = [
   },
   {
     q: "Is my station's data sent anywhere?",
-    a: "No. POLARIS is designed for air-gapped deployments — all expedition data persists on-device. The only server traffic on this public site is anonymous page-view counting; there are no third-party trackers or analytics scripts.",
+    a: "No. POLARIS is designed for air-gapped deployments — all expedition data persists on-device. This public site sets no tracking cookies and runs no third-party analytics; the only server writes come from the contact form, readable only by the station master.",
   },
 ];
 
@@ -194,7 +194,7 @@ export default function Landing() {
               size="lg"
               className="hud-mono h-12 border-[#00f5d4]/40 bg-transparent px-6 text-[11px] font-bold tracking-[0.18em] text-[#00f5d4] hover:bg-[#00f5d4]/10 hover:text-[#00f5d4]"
             >
-              <Link to="/waitlist">JOIN THE WAITLIST</Link>
+              <Link to="/contact">CONTACT COMMAND</Link>
             </Button>
             <a
               href="#faq"
@@ -380,7 +380,7 @@ export default function Landing() {
               variant="outline"
               className="hud-mono h-12 border-white/15 bg-transparent px-6 text-[11px] font-bold tracking-[0.18em] text-[#9ec8dc] hover:bg-white/5 hover:text-[#d7f4ff]"
             >
-              <Link to="/waitlist">JOIN THE WAITLIST</Link>
+              <Link to="/contact">CONTACT COMMAND</Link>
             </Button>
           </div>
         </div>

@@ -1,6 +1,6 @@
-// Cookie consent banner. Choice persists in localStorage; nothing to opt out of
-// functionally — analytics are anonymous page-view counts — but the banner keeps
-// the consent explicit.
+// Cookie consent banner. Choice persists in localStorage; everything stored is
+// session-essential (auth token, expedition state, the consent choice itself),
+// but the banner keeps the disclosure explicit.
 import { Button } from "@/components/ui/button";
 import { Cookie } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -44,8 +44,8 @@ export function CookieConsent() {
               COOKIE NOTICE
             </p>
             <p className="mt-1 text-[11px] leading-relaxed text-[#9ec8dc]">
-              POLARIS stores session data and anonymous page-view counts in your browser.
-              No third-party trackers. Read how in our{" "}
+              POLARIS stores only session-essential data in your browser (sign-in and
+              expedition state). No third-party trackers. Questions? Reach us via the{" "}
               <Link to="/contact" className="text-[#7be6fa] underline-offset-2 hover:underline">
                 contact channel
               </Link>

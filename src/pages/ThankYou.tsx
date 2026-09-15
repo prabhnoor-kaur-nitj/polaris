@@ -1,7 +1,7 @@
 import { SiteLayout } from "@/components/site/SiteChrome";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { ArrowRight, CheckCircle2, Mail, Radio, Snowflake } from "lucide-react";
-import { Link, useSearchParams } from "react-router";
+import { ArrowRight, CheckCircle2, Mail, Radio } from "lucide-react";
+import { Link } from "react-router";
 
 const NEXT_STEPS = [
   {
@@ -10,32 +10,15 @@ const NEXT_STEPS = [
     body: "Command responds during the next transmission window — usually within one station day.",
   },
   {
-    icon: Snowflake,
-    title: "Provisioning window",
-    body: "Waitlist stations are contacted in seasonal order with onboarding details.",
-  },
-  {
     icon: Mail,
     title: "Keep the channel clear",
     body: "Check spam filters for uplinks from the polaris.example.com domain.",
   },
 ];
 
-/** Shared post-action confirmation page for contact + waitlist submissions. */
+/** Post-action confirmation page for the contact form. */
 export default function ThankYou() {
   usePageTitle("Transmission Received");
-  const [params] = useSearchParams();
-  const kind = params.get("kind") ?? "contact";
-
-  const heading =
-    kind === "waitlist"
-      ? "Seat reserved on the manifest."
-      : "Message received. Channel closing.";
-
-  const sub =
-    kind === "waitlist"
-      ? "Your deployment slot is logged with command. Expect contact before the next seasonal window opens."
-      : "Your transmission is in the queue. The operations desk responds during the next comms window.";
 
   return (
     <SiteLayout>
@@ -44,9 +27,12 @@ export default function ThankYou() {
           <CheckCircle2 className="size-8" />
         </span>
         <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-[#eaf8ff] sm:text-4xl">
-          {heading}
+          Message received. Channel closing.
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[#9ec8dc]">{sub}</p>
+        <p className="mt-3 text-sm leading-relaxed text-[#9ec8dc]">
+          Your transmission is in the queue. The operations desk responds during the next
+          comms window.
+        </p>
 
         <div className="mt-10 space-y-3 text-left">
           {NEXT_STEPS.map((s) => (
@@ -72,10 +58,10 @@ export default function ThankYou() {
             BACK TO COMMAND
           </Link>
           <Link
-            to="/waitlist"
+            to="/contact"
             className="hud-mono flex items-center gap-2 rounded-md border border-white/15 bg-white/5 px-5 py-2.5 text-[10px] font-bold tracking-[0.18em] text-[#9ec8dc] transition-colors hover:bg-white/10"
           >
-            VIEW WAITLIST <ArrowRight className="size-3.5" />
+            SEND ANOTHER <ArrowRight className="size-3.5" />
           </Link>
         </div>
       </section>

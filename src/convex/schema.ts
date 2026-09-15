@@ -42,15 +42,8 @@ const schema = defineSchema(
     //   // table fields
     // }).index("by_field", ["field"])
 
-    // Public marketing-site endpoints (insert-only from the landing site;
+    // Public marketing-site endpoint (insert-only from the contact page;
     // reads are master-only, enforced in src/convex/site.ts).
-    waitlist: defineTable({
-      email: v.string(),
-      org: v.optional(v.string()),
-      station: v.optional(v.string()),
-      createdAt: v.number(),
-    }).index("email", ["email"]),
-
     contactMessages: defineTable({
       name: v.string(),
       email: v.string(),
@@ -58,15 +51,6 @@ const schema = defineSchema(
       message: v.string(),
       createdAt: v.number(),
     }).index("email", ["email"]),
-
-    // Anonymous site analytics: one row per page view.
-    pageviews: defineTable({
-      path: v.string(),
-      referrer: v.optional(v.string()),
-      at: v.number(),
-    })
-      .index("by_path", ["path"])
-      .index("by_at", ["at"]),
   },
   {
     schemaValidation: false,

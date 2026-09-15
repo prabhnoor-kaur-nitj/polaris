@@ -23,7 +23,7 @@ const CHANNELS = [
   {
     icon: MapPin,
     title: "FIELD COORDINATION",
-    body: "Deployment planning, waitlist priority and station onboarding calls.",
+    body: "Deployment planning, training and station onboarding questions.",
     meta: "SECTOR 70S · MAITRI GRID",
   },
 ];
