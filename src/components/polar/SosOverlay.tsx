@@ -1,4 +1,5 @@
 import { StatusBadge, useNow } from "@/components/polar/hud";
+import { fmtLat, fmtLon } from "@/lib/polar/geo";
 import { distanceKm, fmtUtc } from "@/lib/polar/store";
 import type { PolarStore } from "@/lib/polar/store";
 import type { Personnel } from "@/lib/polar/types";
@@ -85,7 +86,7 @@ export function SosOverlay({
             <div className="fm-panel-2 px-3 py-2">
               <div className="fm-label">Position</div>
               <div className="fm-mono mt-0.5 text-[12px] font-semibold text-[var(--fm-ink)]">
-                {coord(target.pos.x)}E {coord(target.pos.y)}S · {fmtRelShort(elapsedSec)} since beacon
+                {fmtLat(target.pos.lat)} {fmtLon(target.pos.lon)} · {fmtRelShort(elapsedSec)} since beacon
               </div>
             </div>
           </div>
@@ -118,11 +119,11 @@ export function SosOverlay({
             <div className="fm-panel-2 px-3 py-2.5">
               <div className="fm-label mb-1">Dispatch uplink</div>
               <p className="fm-mono text-[10.5px] leading-relaxed text-[var(--fm-mut)]">
-                {store.state.networkMode === "offline"
-                  ? "OFFLINE — incident queued in local store. Rescue solve cached on-device; will broadcast when link restores."
-                  : store.state.networkMode === "lowband"
-                    ? "VHF MESH — narrowband burst queued. Repeat may take up to 5s per hop."
-                    : "SATCOM LIVE — incident broadcasting to POLARIS HQ and both station medics now."}
+                {store.link === "down"
+                  ? "UPLINK DOWN — incident queued in local store. Rescue solve cached on-device; will broadcast to HQ when the link restores."
+                  : store.link === "lowband"
+                    ? "LOW BANDWIDTH — incident queued for narrowband burst. Sync may take several seconds per event."
+                    : "SATCOM LIVE — incident broadcasting to expedition HQ (Convex) and both station medics now."}
               </p>
             </div>
           </div>
@@ -193,11 +194,6 @@ function SolveStat({ label, value }: { label: string; value: string }) {
       <div className="fm-mono text-[11px] font-bold text-[var(--fm-ink)]">{value}</div>
     </div>
   );
-}
-
-function coord(v: number) {
-  const deg = Math.floor(v / 2) / 10;
-  return `${(deg + 69).toFixed(1)}°`;
 }
 
 function fmtRelShort(sec: number) {

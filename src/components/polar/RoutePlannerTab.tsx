@@ -1,4 +1,5 @@
 import { Panel, StatusBadge } from "@/components/polar/hud";
+import { fmtLat, fmtLon } from "@/lib/polar/geo";
 import { STATIONS, SUPPLY_NODES } from "@/lib/polar/seed";
 import {
   estimateRoute,
@@ -64,8 +65,9 @@ export function RoutePlannerTab({ store }: { store: PolarStore }) {
         : kind === "SUPPLY_NODE"
           ? SUPPLY_NODES.find((s) => s.id === refId)?.pos
           : {
-              x: 20 + Math.random() * 60,
-              y: 20 + Math.random() * 60,
+              // Custom waypoint: random field fix in the Maitri operating sector.
+              lat: Math.round((-70.62 + (Math.random() - 0.5) * 0.12) * 10000) / 10000,
+              lon: Math.round((11.55 + Math.random() * 0.35) * 10000) / 10000,
             };
     if (!label || !base) return;
     setWaypoints((w) => [...w, { id: uid("w"), kind, refId, label, pos: base }]);
@@ -209,7 +211,7 @@ export function RoutePlannerTab({ store }: { store: PolarStore }) {
                       {w.label}
                     </div>
                     <div className="fm-mono text-[9.5px] text-[var(--fm-mut)]">
-                      {w.kind.replace("_", " ")} · {w.pos.x.toFixed(1)}E {w.pos.y.toFixed(1)}S
+                      {w.kind.replace("_", " ")} · {fmtLat(w.pos.lat)} {fmtLon(w.pos.lon)}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">

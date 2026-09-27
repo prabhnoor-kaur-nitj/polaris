@@ -1,4 +1,5 @@
 import { Meter, StatusBadge, useNow } from "@/components/polar/hud";
+import { fmtLat, fmtLon } from "@/lib/polar/geo";
 import { fmtRel, fmtUtc, type PolarStore } from "@/lib/polar/store";
 import type { Personnel, PersonnelStatus, Vehicle } from "@/lib/polar/types";
 import { cn } from "@/lib/utils";
@@ -63,7 +64,7 @@ export function MarkerInspector({
                   {person.callsign} · {person.name.toUpperCase()}
                 </DialogTitle>
                 <DialogDescription className="fm-mono text-[11px] text-[var(--fm-mut)]">
-                  {person.role} · GRID {fmtCoord(person.pos.x)}E {fmtCoord(person.pos.y)}S
+                  {person.role} · {fmtLat(person.pos.lat)} {fmtLon(person.pos.lon)}
                 </DialogDescription>
               </div>
               <span className="ml-auto">
@@ -84,9 +85,9 @@ export function MarkerInspector({
           {/* Telemetry grid */}
           <div className="fm-panel-2 grid grid-cols-2 gap-x-4 gap-y-2.5 p-3">
             <Telemetry icon={Clock} label="Last Ping" value={`${fmtRel(person.lastPing)} · ${fmtUtc(person.lastPing)}Z`} />
-            <Telemetry icon={Radio} label="Link" value={store.state.networkMode === "offline" ? "LOCAL STORE" : store.state.networkMode === "lowband" ? "VHF MESH" : "SATCOM"} />
-            <Telemetry icon={Gauge} label="Grid X" value={`${fmtCoord(person.pos.x)}E`} />
-            <Telemetry icon={Gauge} label="Grid Y" value={`${fmtCoord(person.pos.y)}S`} />
+            <Telemetry icon={Radio} label="Link" value={store.link === "down" ? "LOCAL STORE" : store.link === "lowband" ? "NARROWBAND QUEUE" : "SATCOM LIVE"} />
+            <Telemetry icon={Gauge} label="Latitude" value={fmtLat(person.pos.lat)} />
+            <Telemetry icon={Gauge} label="Longitude" value={fmtLon(person.pos.lon)} />
           </div>
 
           {/* Actions */}
@@ -123,7 +124,7 @@ export function MarkerInspector({
           </div>
 
           <p className="fm-mono text-[9px] tracking-[0.1em] text-[var(--fm-mut)] uppercase">
-            Edits write to local store first{store.state.networkMode === "offline" ? " · queued for sync" : " · sync engine active"}
+            Edits write to the local store first{store.link === "down" ? " · uplink down, queued for sync" : " · streaming to expedition HQ"}
           </p>
         </DialogContent>
       )}
@@ -140,7 +141,7 @@ export function MarkerInspector({
                   {vehicle.name.toUpperCase()}
                 </DialogTitle>
                 <DialogDescription className="fm-mono text-[11px] text-[var(--fm-mut)]">
-                  {vehicle.type} · GRID {fmtCoord(vehicle.pos.x)}E {fmtCoord(vehicle.pos.y)}S
+                  {vehicle.type} · {fmtLat(vehicle.pos.lat)} {fmtLon(vehicle.pos.lon)}
                 </DialogDescription>
               </div>
               <span className="ml-auto">
@@ -206,7 +207,3 @@ function Telemetry({
   );
 }
 
-function fmtCoord(v: number) {
-  const deg = Math.floor(v / 2) / 10; // map % → pseudo-degrees
-  return `${(deg + 69).toFixed(1)}°`; // sector 70S flavor around 69–70°E
-}

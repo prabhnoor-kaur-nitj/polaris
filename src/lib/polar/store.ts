@@ -1,21 +1,25 @@
-import { useCallback, useEffect, useState } from "react";
+import { api } from "@/convex/_generated/api";
+import { useConvex } from "convex/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { routeDistanceKm } from "./geo";
 import { SEED_CARGO, SEED_PERSONNEL, SEED_ROUTES, SEED_VEHICLES } from "./seed";
 import type {
   CargoItem,
   CargoLogEntry,
-  MapPos,
-  NetworkMode,
-  Personnel,
+  GeoPos,
+  LinkStatus,
   PersonnelStatus,
   PlannedRoute,
   PolarState,
+  QueuedEvent,
   RouteWaypoint,
   StockStatus,
 } from "./types";
+import { useNetworkStatus } from "./use-network-status";
 
-const STORAGE_KEY = "ncpor.polar.engine.v1";
+const STORAGE_KEY = "ncpor.polar.engine.v2";
 
-/* ---------- helpers ---------- */
+/* ---------- formatting helpers (public API preserved) ---------- */
 
 export function uid(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
@@ -49,18 +53,7 @@ export function stockStatus(item: CargoItem): StockStatus {
   return "OPTIMAL";
 }
 
-/** 1% of map ≈ 1.2 km, so the full grid spans ~120 km of ice. */
-export function distanceKm(a: MapPos, b: MapPos) {
-  const dx = a.x - b.x;
-  const dy = a.y - b.y;
-  return Math.round(Math.sqrt(dx * dx + dy * dy) * 1.2 * 10) / 10;
-}
-
-export function routeDistanceKm(points: MapPos[]) {
-  let total = 0;
-  for (let i = 1; i < points.length; i++) total += distanceKm(points[i - 1], points[i]);
-  return Math.round(total * 10) / 10;
-}
+export { distanceKm, routeDistanceKm } from "./geo";
 
 export interface FuelEstimate {
   distanceKm: number;
@@ -89,16 +82,16 @@ export function estimateRoute(opts: {
 
 function seedState(): PolarState {
   return {
-    v: 1,
-    networkMode: "online",
+    v: 2,
+    drillMode: null,
     personnel: SEED_PERSONNEL,
     vehicles: SEED_VEHICLES,
     cargo: SEED_CARGO,
     cargoLog: [],
     pending: [],
     routes: SEED_ROUTES,
-    lastSync: Date.now(),
-    expeditionStart: Date.now() - 51_840_000, // D+60 for flavor
+    lastSync: null,
+    expeditionStart: Date.now() - 51_840_000, // D+60 flavor for the topbar clock
     sos: [],
   };
 }
@@ -108,7 +101,7 @@ function loadState(): PolarState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as PolarState;
-      if (parsed && parsed.v === 1 && Array.isArray(parsed.personnel)) {
+      if (parsed && parsed.v === 2 && Array.isArray(parsed.personnel)) {
         return { ...seedState(), ...parsed };
       }
     }
@@ -118,10 +111,90 @@ function loadState(): PolarState {
   return seedState();
 }
 
+type ConvexClient = ReturnType<typeof useConvex>;
+
+/** Send one queued event to its expedition mutation on the server. */
+async function sendEvent(client: ConvexClient, evt: QueuedEvent) {
+  switch (evt.kind) {
+    case "CARGO_LOG":
+      if (!evt.cargo) return;
+      await client.mutation(api.expedition.logCargo, {
+        itemId: evt.cargo.itemId,
+        itemName: evt.cargo.itemName,
+        kind: evt.cargo.kind,
+        qty: evt.cargo.qty,
+        note: evt.cargo.note,
+        at: evt.at,
+        clientId: evt.clientId,
+      });
+      return;
+    case "STATUS":
+      if (!evt.status) return;
+      await client.mutation(api.expedition.setPersonnelStatus, {
+        personnelId: evt.status.personnelId,
+        callsign: evt.status.callsign,
+        status: evt.status.status,
+        at: evt.at,
+      });
+      return;
+    case "ASSET_MOVE":
+      if (!evt.move) return;
+      await client.mutation(api.expedition.recordAssetPosition, {
+        assetKind: evt.move.assetKind,
+        assetId: evt.move.assetId,
+        label: evt.move.label,
+        pos: evt.move.pos,
+        at: evt.at,
+      });
+      return;
+    case "ROUTE":
+      if (!evt.route) return;
+      await client.mutation(api.expedition.saveRoute, {
+        name: evt.route.name,
+        waypoints: evt.route.waypoints.map((w) => ({
+          kind: w.kind,
+          refId: w.refId,
+          label: w.label,
+          pos: w.pos,
+        })),
+        at: evt.at,
+      });
+      return;
+    case "SOS":
+      if (!evt.sos) return;
+      await client.mutation(api.expedition.reportSos, {
+        personnelId: evt.sos.personnelId,
+        callsign: evt.sos.callsign,
+        pos: evt.sos.pos,
+        resolved: evt.sos.resolved,
+        at: evt.at,
+      });
+      return;
+    default:
+      await client.mutation(api.expedition.pushEvent, {
+        clientId: evt.clientId,
+        kind: evt.kind,
+        label: evt.label,
+        at: evt.at,
+      });
+  }
+}
+
 /* ---------- store hook ---------- */
 
 export function usePolarStore() {
   const [state, setState] = useState<PolarState>(() => loadState());
+  const [syncing, setSyncing] = useState(false);
+  const convex = useConvex();
+
+  // Real uplink measurement + the commander's drill override.
+  // "checking" (first paint, no measurement yet) is treated optimistically as
+  // good — a failed flush just stays queued and retries when the probe lands.
+  const measured = useNetworkStatus();
+  const link: LinkStatus = state.drillMode ?? (measured === "checking" ? "good" : measured);
+
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // Local-first persistence (debounced write to localStorage).
   useEffect(() => {
@@ -135,61 +208,67 @@ export function usePolarStore() {
     return () => window.clearTimeout(t);
   }, [state]);
 
-  // Background sync pump: drains the queue when a link is available.
+  /**
+   * Real flush: walks the queue oldest-first and pushes each event through its
+   * Convex mutation. `synced` flags flip only after the server acknowledges;
+   * a failed event stops the pass and stays queued for the next retry.
+   * Re-runs on link change, queue change and when the previous pass releases.
+   */
   useEffect(() => {
-    if (state.networkMode === "offline" || state.pending.length === 0) return;
-    const interval = state.networkMode === "lowband" ? 5000 : 1600;
-    const t = window.setTimeout(() => {
-      setState((s) => {
-        if (s.networkMode === "offline" || s.pending.length === 0) return s;
-        const [flushed, ...rest] = s.pending;
-        return {
-          ...s,
-          pending: rest,
-          cargoLog: s.cargoLog.map((e) =>
-            e.kind && !e.synced && e.at <= flushed.at ? { ...e, synced: true } : e,
-          ),
-          lastSync: Date.now(),
-        };
-      });
-    }, interval);
-    return () => window.clearTimeout(t);
-  }, [state.networkMode, state.pending.length]);
+    if (link === "down" || syncing || state.pending.length === 0) return;
 
-  // Field telemetry drift: batteries drain, distress vitals fall, actives re-ping.
-  useEffect(() => {
-    const t = window.setInterval(() => {
-      setState((s) => ({
-        ...s,
-        personnel: s.personnel.map((p) =>
-          p.status === "DISTRESS"
-            ? {
-                ...p,
-                battery: Math.max(2, p.battery - 1),
-                oxygen: Math.max(52, p.oxygen - 2),
-                supplies: Math.max(5, p.supplies - 3),
-                lastPing: Date.now(),
-              }
-            : p.status === "ACTIVE"
-              ? { ...p, lastPing: Date.now() - Math.floor(Math.random() * 25_000) }
-              : p,
-        ),
-      }));
-    }, 10_000);
-    return () => window.clearInterval(t);
-  }, []);
+    let cancelled = false;
+    setSyncing(true);
+    (async () => {
+      try {
+        // Snapshot the queue — events enqueued during the flush are picked up
+        // when this effect re-runs after `syncing` releases.
+        const queue = [...stateRef.current.pending].reverse(); // oldest first
+        for (const evt of queue) {
+          if (cancelled) return;
+          try {
+            await sendEvent(convex, evt);
+          } catch (err) {
+            console.warn("[POLARIS sync] event failed, still queued:", evt.kind, err);
+            break; // stop the pass; the effect re-runs to retry
+          }
+          if (cancelled) return;
+          setState((s) => ({
+            ...s,
+            pending: s.pending.filter((p) => p.clientId !== evt.clientId),
+            cargoLog: s.cargoLog.map((e) =>
+              e.clientId === evt.clientId ? { ...e, synced: true } : e,
+            ),
+            routes: s.routes.map((r) =>
+              r.clientId === evt.clientId ? { ...r, synced: true } : r,
+            ),
+            sos: s.sos.map((i) =>
+              i.clientId === evt.clientId
+                ? { ...i, synced: true }
+                : i.resolvedClientId === evt.clientId
+                  ? { ...i, resolvedSynced: true }
+                  : i,
+            ),
+            lastSync: Date.now(),
+          }));
+        }
+      } finally {
+        if (!cancelled) setSyncing(false);
+      }
+    })();
 
-  const setNetworkMode = useCallback((mode: NetworkMode) => {
-    setState((s) => ({ ...s, networkMode: mode }));
+    return () => {
+      cancelled = true;
+    };
+  }, [convex, link, syncing, state.pending.length]);
+
+  const setDrillMode = useCallback((mode: LinkStatus | null) => {
+    setState((s) => ({ ...s, drillMode: mode }));
   }, []);
 
   const forceSync = useCallback(() => {
-    setState((s) => ({
-      ...s,
-      pending: [],
-      cargoLog: s.cargoLog.map((e) => ({ ...e, synced: true })),
-      lastSync: Date.now(),
-    }));
+    // Flush is reactive; retried immediately via a state touch.
+    setState((s) => ({ ...s }));
   }, []);
 
   const logCargo = useCallback(
@@ -199,15 +278,17 @@ export function usePolarStore() {
         if (!item || qty <= 0) return s;
         const delta = kind === "INCOMING" ? qty : -qty;
         const stock = Math.max(0, Math.min(item.capacity, item.stock + delta));
+        const clientId = uid("log");
         const entry: CargoLogEntry = {
-          id: uid("log"),
+          id: clientId,
           itemId,
           itemName: item.name,
           kind,
           qty,
           note,
           at: Date.now(),
-          synced: s.networkMode !== "offline",
+          synced: false,
+          clientId,
         };
         return {
           ...s,
@@ -215,18 +296,16 @@ export function usePolarStore() {
             c.id === itemId ? { ...c, stock, updatedAt: Date.now() } : c,
           ),
           cargoLog: [entry, ...s.cargoLog].slice(0, 40),
-          pending:
-            s.networkMode === "offline"
-              ? [
-                  {
-                    id: uid("evt"),
-                    at: Date.now(),
-                    kind: "CARGO_LOG",
-                    label: `${kind === "INCOMING" ? "+" : "−"}${qty} ${item.unit} · ${item.name}`,
-                  },
-                  ...s.pending,
-                ]
-              : s.pending,
+          pending: [
+            {
+              clientId,
+              at: Date.now(),
+              kind: "CARGO_LOG",
+              label: `${kind === "INCOMING" ? "+" : "−"}${qty} ${item.unit} · ${item.name}`,
+              cargo: { itemId, itemName: item.name, kind, qty, note },
+            },
+            ...s.pending,
+          ],
         };
       });
     },
@@ -237,34 +316,34 @@ export function usePolarStore() {
     setState((s) => {
       const p = s.personnel.find((x) => x.id === personnelId);
       if (!p) return s;
+      const clientId = uid("st");
       return {
         ...s,
         personnel: s.personnel.map((x) =>
           x.id === personnelId ? { ...x, status, lastPing: Date.now() } : x,
         ),
-        pending:
-          s.networkMode === "offline"
-            ? [
-                {
-                  id: uid("evt"),
-                  at: Date.now(),
-                  kind: "STATUS",
-                  label: `${p.callsign} → ${status}`,
-                },
-                ...s.pending,
-              ]
-            : s.pending,
+        pending: [
+          {
+            clientId,
+            at: Date.now(),
+            kind: "STATUS",
+            label: `${p.callsign} → ${status}`,
+            status: { personnelId, callsign: p.callsign, status },
+          },
+          ...s.pending,
+        ],
       };
     });
   }, []);
 
   const moveAsset = useCallback(
-    (kind: "personnel" | "vehicle", id: string, pos: MapPos) => {
+    (kind: "personnel" | "vehicle", id: string, pos: GeoPos) => {
       setState((s) => {
         const label =
           kind === "personnel"
             ? s.personnel.find((x) => x.id === id)?.callsign ?? id
             : s.vehicles.find((x) => x.id === id)?.name ?? id;
+        const clientId = uid("mv");
         return {
           ...s,
           personnel:
@@ -277,18 +356,16 @@ export function usePolarStore() {
             kind === "vehicle"
               ? s.vehicles.map((x) => (x.id === id ? { ...x, pos } : x))
               : s.vehicles,
-          pending:
-            s.networkMode === "offline"
-              ? [
-                  {
-                    id: uid("evt"),
-                    at: Date.now(),
-                    kind: "ASSET_MOVE",
-                    label: `${label} repositioned`,
-                  },
-                  ...s.pending,
-                ]
-              : s.pending,
+          pending: [
+            {
+              clientId,
+              at: Date.now(),
+              kind: "ASSET_MOVE",
+              label: `${label} position fix ${pos.lat.toFixed(4)}, ${pos.lon.toFixed(4)}`,
+              move: { assetKind: kind, assetId: id, label, pos },
+            },
+            ...s.pending,
+          ],
         };
       });
     },
@@ -299,71 +376,99 @@ export function usePolarStore() {
     setState((s) => {
       const p = s.personnel.find((x) => x.id === personnelId);
       if (!p) return s;
-      const incident = { id: uid("sos"), personnelId, at: Date.now(), resolved: false };
+      const clientId = uid("sos");
+      const incident = { id: clientId, personnelId, at: Date.now(), resolved: false, clientId };
       return {
         ...s,
         personnel: s.personnel.map((x) =>
           x.id === personnelId ? { ...x, status: "DISTRESS" as const, lastPing: Date.now() } : x,
         ),
-        pending:
-          s.networkMode === "offline"
-            ? [
-                {
-                  id: uid("evt"),
-                  at: Date.now(),
-                  kind: "SOS",
-                  label: `MAYDAY · ${p.callsign}`,
-                },
-                ...s.pending,
-              ]
-            : s.pending,
+        pending: [
+          {
+            clientId,
+            at: Date.now(),
+            kind: "SOS",
+            label: `MAYDAY · ${p.callsign}`,
+            sos: { personnelId, callsign: p.callsign, pos: p.pos, resolved: false },
+          },
+          ...s.pending,
+        ],
         sos: [incident, ...s.sos],
       };
     });
   }, []);
 
   const resolveSos = useCallback((personnelId: string) => {
-    setState((s) => ({
-      ...s,
-      personnel: s.personnel.map((x) =>
-        x.id === personnelId && x.status === "DISTRESS"
-          ? { ...x, status: "STANDBY" as PersonnelStatus }
-          : x,
-      ),
-      sos: s.sos.map((i) => (i.personnelId === personnelId ? { ...i, resolved: true } : i)),
-    }));
-  }, []);
-
-  const saveRoute = useCallback((name: string, waypoints: RouteWaypoint[]) => {
     setState((s) => {
-      const route: PlannedRoute = {
-        id: uid("r"),
-        name: name.trim() || "Unnamed Traverse",
-        waypoints,
-        createdAt: Date.now(),
-      };
+      const p = s.personnel.find((x) => x.id === personnelId);
+      if (!p) return s;
+      const clientId = uid("sosr");
       return {
         ...s,
-        routes: [route, ...s.routes].slice(0, 12),
-        pending:
-          s.networkMode === "offline"
-            ? [
-                {
-                  id: uid("evt"),
-                  at: Date.now(),
-                  kind: "ROUTE",
-                  label: `Route planned · ${route.name}`,
-                },
-                ...s.pending,
-              ]
-            : s.pending,
+        personnel: s.personnel.map((x) =>
+          x.id === personnelId && x.status === "DISTRESS"
+            ? { ...x, status: "STANDBY" as PersonnelStatus }
+            : x,
+        ),
+        pending: [
+          {
+            clientId,
+            at: Date.now(),
+            kind: "SOS",
+            label: `Stand down · ${p.callsign}`,
+            sos: { personnelId, callsign: p.callsign, pos: p.pos, resolved: true },
+          },
+          ...s.pending,
+        ],
+        sos: s.sos.map((i) =>
+          i.personnelId === personnelId && !i.resolved
+            ? { ...i, resolved: true, resolvedClientId: clientId }
+            : i,
+        ),
       };
     });
   }, []);
 
+  const saveRoute = useCallback((name: string, waypoints: RouteWaypoint[]) => {
+    setState((s) => {
+      const clientId = uid("r");
+      const route: PlannedRoute = {
+        id: clientId,
+        clientId,
+        name: name.trim() || "Unnamed Traverse",
+        waypoints,
+        createdAt: Date.now(),
+        synced: false,
+      };
+      return {
+        ...s,
+        routes: [route, ...s.routes].slice(0, 12),
+        pending: [
+          {
+            clientId,
+            at: Date.now(),
+            kind: "ROUTE",
+            label: `Route planned · ${route.name}`,
+            route: { name: route.name, waypoints },
+          },
+          ...s.pending,
+        ],
+      };
+    });
+  }, []);
+
+  const meshRttMs = useMemo(() => {
+    if (link === "down") return null;
+    return link === "lowband" ? 4200 : 320;
+  }, [link]);
+
   return {
     state,
-    setNetworkMode,
+    link,
+    measured,
+    syncing,
+    meshRttMs,
+    setDrillMode,
     forceSync,
     logCargo,
     setPersonnelStatus,

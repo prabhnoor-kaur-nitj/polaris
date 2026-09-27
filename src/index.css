@@ -587,3 +587,119 @@
     animation: none;
   }
 }
+
+/* ==========================================================================
+   TACTICAL MAP — MapLibre DOM markers + offline graticule chart
+   Markers are absolutely-positioned DOM nodes inside the map container; the
+   graticule is a hairline chart surface that stays visible behind the canvas
+   wherever basemap tiles are missing (offline chart mode).
+   ========================================================================== */
+
+.fm .polar-map-graticule {
+  background:
+    repeating-linear-gradient(
+      to right,
+      var(--fm-line-soft) 0,
+      var(--fm-line-soft) 1px,
+      transparent 1px,
+      transparent 90px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--fm-line-soft) 0,
+      var(--fm-line-soft) 1px,
+      transparent 1px,
+      transparent 90px
+    ),
+    var(--fm-paper-2);
+}
+
+.fm .polar-marker {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  cursor: pointer;
+  user-select: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+}
+
+.fm .polar-marker-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--fm-line);
+  border-radius: 3px;
+  background: var(--fm-paper);
+  color: var(--fm-mut);
+  transition: border-color 0.15s ease;
+}
+
+.fm .polar-marker-icon.is-round {
+  border-radius: 9999px;
+}
+
+.fm .polar-marker-icon.is-small {
+  width: 17px;
+  height: 17px;
+}
+
+.fm .polar-marker:hover .polar-marker-icon {
+  border-color: var(--fm-ink);
+}
+
+.fm .polar-marker[data-tone="good"] .polar-marker-icon {
+  color: var(--fm-good);
+  border-color: rgba(127, 174, 142, 0.5);
+}
+
+.fm .polar-marker[data-tone="warn"] .polar-marker-icon {
+  color: var(--fm-warn);
+  border-color: rgba(201, 163, 79, 0.5);
+}
+
+.fm .polar-marker[data-tone="accent"] .polar-marker-icon {
+  color: var(--fm-accent);
+  border-color: rgba(127, 180, 201, 0.5);
+}
+
+.fm .polar-marker[data-tone="alert"] .polar-marker-icon {
+  color: var(--fm-alert);
+  border-color: rgba(208, 92, 75, 0.55);
+}
+
+.fm .polar-marker[data-tone="alert"] {
+  animation: fm-blink 1.6s ease-in-out infinite;
+}
+
+.fm .polar-marker-label {
+  padding: 0 4px;
+  border: 1px solid var(--fm-line);
+  border-radius: 2px;
+  background: rgba(13, 16, 21, 0.72);
+  color: var(--fm-ink);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.fm .polar-marker.is-site {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.fm .polar-marker.is-site .polar-marker-label {
+  color: var(--fm-accent);
+  border-color: rgba(127, 180, 201, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fm .polar-marker[data-tone="alert"] {
+    animation: none;
+  }
+}

@@ -51,6 +51,79 @@ const schema = defineSchema(
       message: v.string(),
       createdAt: v.number(),
     }).index("email", ["email"]),
+
+    // ---- POLARIS expedition sync (see src/convex/expedition.ts) ----
+    // Server-side ground truth for the offline-first field store. Rows are
+    // written only by provisioned portal users (RLS enforced in
+    // expedition.ts) and carry the client timestamp `at` so the feed orders
+    // by when events happened in the field, not when they arrived.
+    cargoLog: defineTable({
+      userId: v.id("users"),
+      itemId: v.string(),
+      itemName: v.string(),
+      kind: v.union(v.literal("OUTGOING"), v.literal("INCOMING")),
+      qty: v.number(),
+      note: v.string(),
+      at: v.number(),
+      clientId: v.string(), // idempotency key from the field device
+    }).index("at", ["at"]),
+    personnelStatus: defineTable({
+      userId: v.id("users"),
+      personnelId: v.string(),
+      callsign: v.string(),
+      status: v.union(
+        v.literal("ACTIVE"),
+        v.literal("STANDBY"),
+        v.literal("REST"),
+        v.literal("DISTRESS"),
+      ),
+      at: v.number(),
+    }).index("at", ["at"]),
+    assetPositions: defineTable({
+      userId: v.id("users"),
+      assetKind: v.union(v.literal("personnel"), v.literal("vehicle")),
+      assetId: v.string(),
+      label: v.string(),
+      lat: v.number(),
+      lon: v.number(),
+      at: v.number(),
+    }).index("at", ["at"]),
+    routes: defineTable({
+      userId: v.id("users"),
+      name: v.string(),
+      waypoints: v.array(
+        v.object({
+          kind: v.union(
+            v.literal("STATION"),
+            v.literal("SUPPLY_NODE"),
+            v.literal("CUSTOM"),
+          ),
+          refId: v.optional(v.string()),
+          label: v.string(),
+          lat: v.number(),
+          lon: v.number(),
+        }),
+      ),
+      at: v.number(),
+    }).index("at", ["at"]),
+    sosIncidents: defineTable({
+      userId: v.id("users"),
+      personnelId: v.string(),
+      callsign: v.string(),
+      lat: v.number(),
+      lon: v.number(),
+      resolved: v.boolean(),
+      at: v.number(),
+    }).index("at", ["at"]),
+    syncEvents: defineTable({
+      userId: v.id("users"),
+      kind: v.string(),
+      label: v.string(),
+      at: v.number(),
+      clientId: v.string(),
+    })
+      .index("by_clientId", ["clientId"])
+      .index("at", ["at"]),
   },
   {
     schemaValidation: false,

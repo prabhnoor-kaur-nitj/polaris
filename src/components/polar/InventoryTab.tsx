@@ -208,7 +208,7 @@ export function InventoryTab({ store }: { store: PolarStore }) {
               Commit entry
             </button>
             <p className="fm-mono text-[9px] leading-relaxed text-[var(--fm-mut)] uppercase">
-              Optimistic write · {state.networkMode === "offline" ? "queued in local store until link restores" : "sync engine streaming to HQ"}
+              Optimistic write · {store.link === "down" ? "uplink down — queued in local store until it restores" : store.link === "lowband" ? "low bandwidth — queue drains slowly to HQ" : "sync engine streaming to expedition HQ"}
             </p>
           </form>
         </Panel>

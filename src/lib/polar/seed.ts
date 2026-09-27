@@ -7,15 +7,39 @@ import type {
   Vehicle,
 } from "./types";
 
+// Real coordinates. Maitri and Bharati are the Indian Antarctic stations;
+// supply nodes are sited on realistic shelf/ice terrain near them.
 export const STATIONS: Station[] = [
-  { id: "st-maitri", name: "Maitri Station", code: "MAITRI", pos: { x: 30, y: 58 } },
-  { id: "st-bharati", name: "Bharati Station", code: "BHARATI", pos: { x: 68, y: 42 } },
+  {
+    id: "st-maitri",
+    name: "Maitri Station",
+    code: "MAITRI",
+    pos: { lat: -70.6667, lon: 11.8667 },
+  },
+  {
+    id: "st-bharati",
+    name: "Bharati Station",
+    code: "BHARATI",
+    pos: { lat: -69.4008, lon: 76.1864 },
+  },
 ];
 
 export const SUPPLY_NODES: SupplyNode[] = [
-  { id: "sn-fuel", name: "Fuel Depot F1", pos: { x: 22, y: 44 } },
-  { id: "sn-med", name: "Medical Cache M2", pos: { x: 44, y: 70 } },
-  { id: "sn-radar", name: "Radar Post R7", pos: { x: 78, y: 68 } },
+  {
+    id: "sn-fuel",
+    name: "Fuel Depot F1",
+    pos: { lat: -70.7, lon: 12.1 }, // shelf edge near Maitri
+  },
+  {
+    id: "sn-med",
+    name: "Medical Cache M2",
+    pos: { lat: -70.6, lon: 11.5 }, // inland west of Maitri
+  },
+  {
+    id: "sn-radar",
+    name: "Radar Post R7",
+    pos: { lat: -69.55, lon: 75.9 }, // Approach to Bharati
+  },
 ];
 
 export const SEED_PERSONNEL: Personnel[] = [
@@ -29,7 +53,7 @@ export const SEED_PERSONNEL: Personnel[] = [
     oxygen: 98,
     supplies: 84,
     lastPing: Date.now() - 40_000,
-    pos: { x: 33, y: 55 },
+    pos: { lat: -70.6712, lon: 11.9281 },
   },
   {
     id: "p-02",
@@ -41,7 +65,7 @@ export const SEED_PERSONNEL: Personnel[] = [
     oxygen: 95,
     supplies: 55,
     lastPing: Date.now() - 120_000,
-    pos: { x: 62, y: 47 },
+    pos: { lat: -70.6554, lon: 11.7955 },
   },
   {
     id: "p-03",
@@ -53,7 +77,7 @@ export const SEED_PERSONNEL: Personnel[] = [
     oxygen: 91,
     supplies: 40,
     lastPing: Date.now() - 300_000,
-    pos: { x: 52, y: 22 },
+    pos: { lat: -70.5891, lon: 11.6317 },
   },
   {
     id: "p-04",
@@ -65,7 +89,7 @@ export const SEED_PERSONNEL: Personnel[] = [
     oxygen: 99,
     supplies: 70,
     lastPing: Date.now() - 90_000,
-    pos: { x: 27, y: 63 },
+    pos: { lat: -70.6823, lon: 11.8412 },
   },
   {
     id: "p-05",
@@ -77,7 +101,7 @@ export const SEED_PERSONNEL: Personnel[] = [
     oxygen: 96,
     supplies: 62,
     lastPing: Date.now() - 60_000,
-    pos: { x: 70, y: 38 },
+    pos: { lat: -70.6601, lon: 11.9032 },
   },
 ];
 
@@ -88,7 +112,7 @@ export const SEED_VEHICLES: Vehicle[] = [
     type: "Tracked Transport",
     fuel: 82,
     speedKmh: 18,
-    pos: { x: 36, y: 52 },
+    pos: { lat: -70.669, lon: 11.8995 },
     available: true,
   },
   {
@@ -97,7 +121,7 @@ export const SEED_VEHICLES: Vehicle[] = [
     type: "Tracked Transport",
     fuel: 27,
     speedKmh: 18,
-    pos: { x: 40, y: 61 },
+    pos: { lat: -70.6745, lon: 11.8533 },
     available: true,
   },
   {
@@ -106,7 +130,7 @@ export const SEED_VEHICLES: Vehicle[] = [
     type: "Light Recon",
     fuel: 64,
     speedKmh: 45,
-    pos: { x: 58, y: 44 },
+    pos: { lat: -70.648, lon: 11.9102 },
     available: true,
   },
   {
@@ -115,7 +139,7 @@ export const SEED_VEHICLES: Vehicle[] = [
     type: "Heavy Haul",
     fuel: 0,
     speedKmh: 0,
-    pos: { x: 25, y: 50 },
+    pos: { lat: -70.6621, lon: 11.8203 },
     available: false,
   },
 ];
@@ -189,9 +213,27 @@ export const SEED_ROUTES: PlannedRoute[] = [
     name: "Maitri → Bharati Convoy",
     createdAt: Date.now() - 86_400_000,
     waypoints: [
-      { id: "w-1", kind: "STATION", refId: "st-maitri", label: "Maitri Station", pos: { x: 30, y: 58 } },
-      { id: "w-2", kind: "SUPPLY_NODE", refId: "sn-fuel", label: "Fuel Depot F1", pos: { x: 22, y: 44 } },
-      { id: "w-3", kind: "STATION", refId: "st-bharati", label: "Bharati Station", pos: { x: 68, y: 42 } },
+      {
+        id: "w-1",
+        kind: "STATION",
+        refId: "st-maitri",
+        label: "Maitri Station",
+        pos: STATIONS[0].pos,
+      },
+      {
+        id: "w-2",
+        kind: "SUPPLY_NODE",
+        refId: "sn-fuel",
+        label: "Fuel Depot F1",
+        pos: SUPPLY_NODES[0].pos,
+      },
+      {
+        id: "w-3",
+        kind: "STATION",
+        refId: "st-bharati",
+        label: "Bharati Station",
+        pos: STATIONS[1].pos,
+      },
     ],
   },
 ];

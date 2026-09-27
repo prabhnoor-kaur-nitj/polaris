@@ -1,31 +1,79 @@
+// Real GIS tactical map: MapLibre GL over Carto dark basemap tiles, real
+// WGS-84 coordinates, draggable asset markers that record real position fixes.
+// When tiles are unreachable the instrument still reports coordinates and the
+// rescue solve over the hairline graticule — never a blank box.
+
 import { StatusBadge, useNow } from "@/components/polar/hud";
+import { fmtLat, fmtLon } from "@/lib/polar/geo";
 import { STATIONS, SUPPLY_NODES } from "@/lib/polar/seed";
 import { distanceKm, fmtUtc, type PolarStore } from "@/lib/polar/store";
-import type { MapPos } from "@/lib/polar/types";
+import type { GeoPos } from "@/lib/polar/types";
 import { cn } from "@/lib/utils";
-import {
-  Crosshair,
-  Move,
-  Navigation,
-  Package,
-  RadioTower,
-  Truck,
-  User,
-} from "lucide-react";
-import { useMemo, useRef } from "react";
+import * as maplibregl from "maplibre-gl";
+import type { GeoJSONSource, Map as MlMap, Marker as MlMarker } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { Move, Navigation, WifiOff } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-const VB_W = 100;
-const VB_H = 62.5; // 16:10 aspect
+const TILE_STYLE = {
+  version: 8 as const,
+  sources: {
+    carto: {
+      type: "raster" as const,
+      tiles: [
+        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+      attribution: "© OpenStreetMap contributors © CARTO",
+    },
+  },
+  // No opaque background layer: the graticule div behind the canvas stays
+  // visible wherever tiles are missing (offline chart mode).
+  layers: [{ id: "carto", type: "raster" as const, source: "carto", paint: { "raster-opacity": 0.92 } }],
+};
 
-function toXY(pos: MapPos) {
-  return { x: (pos.x / 100) * VB_W, y: (pos.y / 100) * VB_H };
+/** Field region: Maitri sector (11–13°E) through Bharati sector (75–77°E). */
+const FIELD_BOUNDS: maplibregl.LngLatBoundsLike = [
+  [10.5, -71.2],
+  [77.5, -69.0],
+];
+
+const ICONS = {
+  user:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  truck:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/></svg>',
+  tower:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/><path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/><path d="M16.2 4.8c2 2 2.26 5.10.8 7.47"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/><path d="M9.5 18h5"/><path d="m12 13 4 11"/><path d="m12 13-4 11"/></svg>',
+  pkg:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>',
+} as const;
+
+type MarkerTone = "good" | "warn" | "accent" | "alert" | "muted";
+
+function buildMarkerEl(opts: {
+  icon: string;
+  label: string;
+  tone: MarkerTone;
+  round?: boolean;
+  small?: boolean;
+}) {
+  const el = document.createElement("div");
+  el.className = "polar-marker";
+  el.dataset.tone = opts.tone;
+  el.innerHTML =
+    `<span class="polar-marker-icon${opts.round ? " is-round" : ""}${opts.small ? " is-small" : ""}">${opts.icon}</span>` +
+    (opts.label ? `<span class="polar-marker-label">${opts.label}</span>` : "");
+  return el;
 }
 
-function fmtEta(ms: number) {
-  const totalSec = Math.max(0, Math.round(ms / 1000));
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return m > 0 ? `${m}m ${String(s).padStart(2, "0")}s` : `${s}s`;
+function toneForPersonnel(status: string): MarkerTone {
+  if (status === "DISTRESS") return "alert";
+  if (status === "ACTIVE") return "good";
+  if (status === "STANDBY") return "warn";
+  return "muted";
 }
 
 export function TacticalMap({
@@ -35,54 +83,313 @@ export function TacticalMap({
   store: PolarStore;
   onSelectAsset: (kind: "personnel" | "vehicle", id: string) => void;
 }) {
-  const { state, moveAsset } = store;
+  const { state, moveAsset, link } = store;
   const now = useNow(1000);
-  const gridRef = useRef<HTMLDivElement | null>(null);
-  const dragRef = useRef<
-    | null
-    | {
-        kind: "personnel" | "vehicle";
-        id: string;
-        moved: boolean;
-      }
-  >(null);
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<MlMap | null>(null);
+  const assetMarkersRef = useRef<Map<string, MlMarker>>(new Map());
+  const siteMarkersRef = useRef<MlMarker[]>([]);
+  const draggingRef = useRef<string | null>(null);
   const justDraggedRef = useRef(false);
+  const selectRef = useRef(onSelectAsset);
+  selectRef.current = onSelectAsset;
 
-  const distress = state.personnel.filter((p) => p.status === "DISTRESS");
+  const [mapReady, setMapReady] = useState(false);
+  const [tilesFailed, setTilesFailed] = useState(false);
+  const [view, setView] = useState<{ lat: number; lon: number; zoom: number }>({
+    lat: -70.2,
+    lon: 30,
+    zoom: 3,
+  });
 
-  /* Nearest rescue asset (any distress on the grid). */
+  /* ---------- create / destroy the map ---------- */
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || mapRef.current) return;
+
+    const map = new maplibregl.Map({
+      container,
+      style: TILE_STYLE as maplibregl.StyleSpecification,
+      center: [30, -70.2],
+      zoom: 3,
+      attributionControl: false,
+      renderWorldCopies: false,
+      maxZoom: 11,
+      dragRotate: false,
+      touchPitch: false,
+    });
+    mapRef.current = map;
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 110, unit: "metric" }), "bottom-left");
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+
+    let tileErrorSeen = false;
+    map.on("error", (e: unknown) => {
+      const src = (e as { sourceId?: string }).sourceId;
+      if (src === "carto") {
+        if (!tileErrorSeen) {
+          tileErrorSeen = true;
+          setTilesFailed(true);
+        }
+        return;
+      }
+      console.warn("[POLARIS map]", e);
+    });
+
+    const onView = () => {
+      const c = map.getCenter();
+      setView({ lat: c.lat, lon: c.lng, zoom: map.getZoom() });
+    };
+    map.on("moveend", onView);
+    map.on("zoomend", onView);
+
+    map.on("load", () => {
+      setMapReady(true);
+      map.fitBounds(FIELD_BOUNDS, { padding: 48, duration: 0, maxZoom: 4 });
+      onView();
+    });
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      assetMarkersRef.current.clear();
+      siteMarkersRef.current = [];
+      setMapReady(false);
+      setTilesFailed(false);
+    };
+  }, []);
+
+  /* ---------- static site markers (stations + supply nodes) ---------- */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    const markers: MlMarker[] = [];
+    for (const s of STATIONS) {
+      const el = buildMarkerEl({ icon: ICONS.tower, label: s.code, tone: "accent" });
+      el.classList.add("is-site");
+      markers.push(
+        new maplibregl.Marker({ element: el, anchor: "center" })
+          .setLngLat([s.pos.lon, s.pos.lat])
+          .addTo(map),
+      );
+    }
+    for (const sn of SUPPLY_NODES) {
+      const el = buildMarkerEl({ icon: ICONS.pkg, label: sn.name.split(" ")[0].toUpperCase(), tone: "accent", small: true });
+      el.classList.add("is-site");
+      markers.push(
+        new maplibregl.Marker({ element: el, anchor: "center" })
+          .setLngLat([sn.pos.lon, sn.pos.lat])
+          .addTo(map),
+      );
+    }
+    siteMarkersRef.current = markers;
+
+    return () => {
+      for (const m of markers) m.remove();
+      siteMarkersRef.current = [];
+    };
+  }, [mapReady]);
+
+  /* ---------- routes + rescue solve as GeoJSON layers ---------- */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    const distress = state.personnel.find((p) => p.status === "DISTRESS");
+    let rescueCoords: [number, number][] | null = null;
+    if (distress) {
+      let best: { pos: GeoPos } | null = null;
+      let bestKm = Infinity;
+      for (const v of state.vehicles) {
+        const km = distanceKm(v.pos, distress.pos);
+        if (km < bestKm) {
+          bestKm = km;
+          best = { pos: v.pos };
+        }
+      }
+      if (best) {
+        rescueCoords = [
+          [best.pos.lon, best.pos.lat],
+          [distress.pos.lon, distress.pos.lat],
+        ];
+      }
+    }
+
+    if (!map.getSource("polar-routes")) {
+      map.addSource("polar-routes", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: state.routes
+            .filter((r) => r.waypoints.length > 1)
+            .map((r) => ({
+              type: "Feature" as const,
+              properties: { name: r.name },
+              geometry: {
+                type: "LineString" as const,
+                coordinates: r.waypoints.map((w) => [w.pos.lon, w.pos.lat] as [number, number]),
+              },
+            })),
+        },
+      });
+      map.addSource("polar-rescue", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features:
+            rescueCoords !== null
+              ? [
+                  {
+                    type: "Feature" as const,
+                    properties: {},
+                    geometry: { type: "LineString" as const, coordinates: rescueCoords },
+                  },
+                ]
+              : [],
+        },
+      });
+      map.addLayer({
+        id: "polar-routes-line",
+        type: "line",
+        source: "polar-routes",
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: { "line-color": "#7fb4c9", "line-width": 2, "line-opacity": 0.8 },
+      });
+      map.addLayer({
+        id: "polar-rescue-line",
+        type: "line",
+        source: "polar-rescue",
+        paint: { "line-color": "#d05c4b", "line-width": 2.5, "line-dasharray": [2, 1.5] },
+      });
+    } else {
+      (map.getSource("polar-routes") as GeoJSONSource).setData({
+        type: "FeatureCollection",
+        features: state.routes
+          .filter((r) => r.waypoints.length > 1)
+          .map((r) => ({
+            type: "Feature" as const,
+            properties: { name: r.name },
+            geometry: {
+              type: "LineString" as const,
+              coordinates: r.waypoints.map((w) => [w.pos.lon, w.pos.lat] as [number, number]),
+            },
+          })),
+      });
+      (map.getSource("polar-rescue") as GeoJSONSource).setData({
+        type: "FeatureCollection",
+        features:
+          rescueCoords !== null
+            ? [
+                {
+                  type: "Feature" as const,
+                  properties: {},
+                  geometry: { type: "LineString" as const, coordinates: rescueCoords },
+                },
+              ]
+            : [],
+      });
+    }
+  }, [mapReady, state.routes, state.personnel, state.vehicles]);
+
+  /* ---------- draggable asset markers, synced with store state ---------- */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    const want = new Map<string, { kind: "personnel" | "vehicle"; id: string; label: string; tone: MarkerTone; pos: GeoPos; round: boolean }>();
+    for (const p of state.personnel) {
+      want.set(`personnel:${p.id}`, {
+        kind: "personnel",
+        id: p.id,
+        label: p.callsign,
+        tone: toneForPersonnel(p.status),
+        pos: p.pos,
+        round: true,
+      });
+    }
+    for (const v of state.vehicles) {
+      want.set(`vehicle:${v.id}`, {
+        kind: "vehicle",
+        id: v.id,
+        label: "",
+        tone: v.available ? "accent" : "muted",
+        pos: v.pos,
+        round: false,
+      });
+    }
+
+    for (const [key, spec] of want) {
+      let marker = assetMarkersRef.current.get(key);
+      if (!marker) {
+        const el = buildMarkerEl({
+          icon: spec.kind === "personnel" ? ICONS.user : ICONS.truck,
+          label: spec.label,
+          tone: spec.tone,
+          round: spec.round,
+        });
+        el.addEventListener("click", () => {
+          if (justDraggedRef.current || draggingRef.current) return;
+          selectRef.current(spec.kind, spec.id);
+        });
+        const m = new maplibregl.Marker({ element: el, draggable: true, anchor: "center" })
+          .setLngLat([spec.pos.lon, spec.pos.lat])
+          .addTo(map);
+
+        m.on("dragstart", () => {
+          draggingRef.current = key;
+        });
+        m.on("dragend", () => {
+          draggingRef.current = null;
+          justDraggedRef.current = true;
+          window.setTimeout(() => {
+            justDraggedRef.current = false;
+          }, 120);
+          const lngLat = m.getLngLat();
+          // Real GPS fix: round-tripped to the store and queued for the server.
+          moveAsset(spec.kind, spec.id, {
+            lat: Math.round(lngLat.lat * 10000) / 10000,
+            lon: Math.round(lngLat.lng * 10000) / 10000,
+          });
+        });
+
+        assetMarkersRef.current.set(key, m);
+        marker = m;
+      } else if (draggingRef.current !== key) {
+        marker.setLngLat([spec.pos.lon, spec.pos.lat]);
+        const el = marker.getElement();
+        el.dataset.tone = spec.tone;
+      }
+    }
+
+    for (const [key, marker] of assetMarkersRef.current) {
+      if (!want.has(key)) {
+        marker.remove();
+        assetMarkersRef.current.delete(key);
+      }
+    }
+  }, [mapReady, state.personnel, state.vehicles, moveAsset]);
+
+  /* ---------- SOS strip ---------- */
   const rescue = useMemo(() => {
+    const distress = state.personnel.filter((p) => p.status === "DISTRESS");
     if (distress.length === 0) return null;
     const target = distress[0];
-    let best: { name: string; km: number; speedKmh: number; pos: MapPos } | null = null;
+    let best: { name: string; km: number; speedKmh: number } | null = null;
     for (const v of state.vehicles) {
       const km = distanceKm(v.pos, target.pos);
-      if (!best || km < best.km) best = { name: v.name, km, speedKmh: v.speedKmh, pos: v.pos };
+      if (!best || km < best.km) best = { name: v.name, km, speedKmh: v.speedKmh };
     }
     return best ? { ...best, target } : null;
-  }, [distress, state.vehicles]);
+  }, [state.personnel, state.vehicles]);
 
-  function handlePointerDown(e: React.PointerEvent, kind: "personnel" | "vehicle", id: string) {
-    dragRef.current = { kind, id, moved: false };
-    (e.target as Element).setPointerCapture?.(e.pointerId);
-  }
-
-  function handlePointerMove(e: React.PointerEvent) {
-    const drag = dragRef.current;
-    const grid = gridRef.current;
-    if (!drag || !grid) return;
-    const rect = grid.getBoundingClientRect();
-    const x = Math.max(2, Math.min(98, ((e.clientX - rect.left) / rect.width) * 100));
-    const y = Math.max(2, Math.min(98, ((e.clientY - rect.top) / rect.height) * 100));
-    dragRef.current = { ...drag, moved: true };
-    moveAsset(drag.kind, drag.id, { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 });
-  }
-
-  function handlePointerUp() {
-    if (dragRef.current) {
-      justDraggedRef.current = dragRef.current.moved;
-      dragRef.current = null;
-    }
+  function fmtEta(ms: number) {
+    const totalMin = Math.max(0, Math.round(ms / 60000));
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    return h > 0 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
   }
 
   return (
@@ -91,279 +398,77 @@ export function TacticalMap({
       <div className="flex flex-wrap items-center gap-2 border-b border-[var(--fm-line-soft)] px-4 py-2.5">
         <Navigation className="size-4 text-[var(--fm-accent)]" />
         <h2 className="fm-mono text-[10.5px] font-semibold tracking-[0.22em] text-[var(--fm-ink)] uppercase">
-          Tactical grid · Sector 70S
+          Tactical map · WGS-84 · Maitri — Bharati sectors
         </h2>
         <div className="ml-auto flex items-center gap-2">
           <StatusBadge tone="ice">
-            <Crosshair className="size-3" /> 120 km × 120 km
+            {fmtLat(view.lat)} {fmtLon(view.lon)} · Z{view.zoom.toFixed(1)}
           </StatusBadge>
           <StatusBadge tone="muted">
-            <Move className="size-3" /> Drag to reposition
+            <Move className="size-3" /> Drag = GPS fix
           </StatusBadge>
         </div>
       </div>
 
-      {/* SOS strip (when active) */}
-      {rescue && (
-        <div className="flex flex-wrap items-center gap-3 border-b border-[rgba(208,92,75,0.35)] bg-[rgba(208,92,75,0.07)] px-4 py-2">
-          <StatusBadge tone="alert" pulse>
-            ● SOS active — {rescue.target.callsign}
-          </StatusBadge>
-          <span className="fm-mono text-[11px] text-[var(--fm-ink)]">
-            {rescue.name} · {rescue.km} km out · ETA{" "}
-            {rescue.speedKmh > 0 ? fmtEta((rescue.km / rescue.speedKmh) * 3_600_000) : "—"}
-          </span>
-          <button
-            type="button"
-            onClick={() => store.resolveSos(rescue.target.id)}
-            className="fm-btn fm-btn-good fm-btn-sm ml-auto"
-          >
-            Mark rescued
-          </button>
-        </div>
-      )}
+      {/* The real map */}
+      <div className="relative aspect-[16/10] w-full">
+        <div className="polar-map-graticule absolute inset-0" />
+        <div ref={containerRef} className="absolute inset-0" />
 
-      {/* The grid — flat chart on paper */}
-      <div
-        ref={gridRef}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-        className="relative aspect-[16/10] w-full touch-none overflow-hidden select-none"
-        style={{ background: "var(--fm-paper-2)" }}
-      >
-        {/* SVG chart: grid, contours, zones, routes */}
-        <svg
-          className="pointer-events-none absolute inset-0 size-full"
-          viewBox={`0 0 ${VB_W} ${VB_H}`}
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient id="routeGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#4e7d92" />
-              <stop offset="100%" stopColor="#7fb4c9" />
-            </linearGradient>
-          </defs>
-
-          {Array.from({ length: 13 }, (_, i) => (
-            <line
-              key={`v${i}`}
-              x1={i * (VB_W / 12)}
-              y1="0"
-              x2={i * (VB_W / 12)}
-              y2={VB_H}
-              stroke="var(--fm-line-soft)"
-              strokeWidth="0.15"
-            />
-          ))}
-          {Array.from({ length: 9 }, (_, i) => (
-            <line
-              key={`h${i}`}
-              x1="0"
-              y1={i * (VB_H / 8)}
-              x2={VB_W}
-              y2={i * (VB_H / 8)}
-              stroke="var(--fm-line-soft)"
-              strokeWidth="0.15"
-            />
-          ))}
-
-          {/* contours — ice-shelf isolines */}
-          <ellipse cx="20" cy="16" rx="18" ry="8" fill="none" stroke="var(--fm-line)" strokeWidth="0.2" />
-          <ellipse cx="24" cy="17" rx="12" ry="5" fill="none" stroke="var(--fm-line-soft)" strokeWidth="0.2" />
-          <ellipse cx="80" cy="46" rx="16" ry="7" fill="none" stroke="var(--fm-line)" strokeWidth="0.2" />
-          <ellipse cx="76" cy="47" rx="10" ry="4.5" fill="none" stroke="var(--fm-line-soft)" strokeWidth="0.2" />
-          <ellipse cx="55" cy="55" rx="22" ry="9" fill="none" stroke="var(--fm-line-soft)" strokeWidth="0.2" />
-
-          {/* station zones */}
-          {STATIONS.map((s) => {
-            const { x, y } = toXY(s.pos);
-            return (
-              <g key={s.id}>
-                <circle
-                  cx={x}
-                  cy={y}
-                  r="9"
-                  fill="rgba(127,180,201,0.05)"
-                  stroke="rgba(127,180,201,0.3)"
-                  strokeWidth="0.2"
-                  strokeDasharray="1.2 0.8"
-                />
-                <text
-                  x={x}
-                  y={y - 11}
-                  textAnchor="middle"
-                  fontSize="2.2"
-                  fill="var(--fm-mut)"
-                  fontFamily="JetBrains Mono, monospace"
-                  letterSpacing="0.5"
-                >
-                  {s.code}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* rescue route */}
-          {rescue && (
-            <line
-              className="fm-dash"
-              x1={toXY(rescue.pos).x}
-              y1={toXY(rescue.pos).y}
-              x2={toXY(rescue.target.pos).x}
-              y2={toXY(rescue.target.pos).y}
-              stroke="var(--fm-alert)"
-              strokeWidth="0.5"
-            />
-          )}
-
-          {/* saved routes preview */}
-          {state.routes.map((r) =>
-            r.waypoints.length > 1 ? (
-              <polyline
-                key={r.id}
-                points={r.waypoints
-                  .map((w) => {
-                    const c = toXY(w.pos);
-                    return `${c.x},${c.y}`;
-                  })
-                  .join(" ")}
-                fill="none"
-                stroke="url(#routeGrad)"
-                strokeWidth="0.45"
-                opacity="0.85"
-              />
-            ) : null,
-          )}
-        </svg>
-
-        {/* station markers */}
-        {STATIONS.map((s) => (
-          <div
-            key={s.id}
-            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: `${s.pos.x}%`, top: `${s.pos.y}%` }}
-          >
-            <div className="relative grid place-items-center">
-              <span className="grid size-8 place-items-center rounded-sm border border-[rgba(127,180,201,0.45)] bg-[var(--fm-paper)] text-[var(--fm-accent)]">
-                <RadioTower className="size-4" />
-              </span>
-              <span className="fm-mono absolute top-9 whitespace-nowrap text-[9px] font-bold tracking-[0.18em] text-[var(--fm-ink)] uppercase">
-                {s.name.toUpperCase()}
-              </span>
-            </div>
+        {!mapReady && (
+          <div className="absolute inset-0 grid place-items-center bg-[var(--fm-paper-2)]">
+            <span className="fm-label animate-pulse">Acquiring basemap…</span>
           </div>
-        ))}
+        )}
 
-        {/* supply nodes */}
-        {SUPPLY_NODES.map((sn) => (
-          <div
-            key={sn.id}
-            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: `${sn.pos.x}%`, top: `${sn.pos.y}%` }}
-          >
-            <span className="fm-plate grid size-6 place-items-center text-[var(--fm-accent)]">
-              <Package className="size-3" />
-            </span>
-            <span className="fm-mono absolute top-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] tracking-[0.14em] text-[var(--fm-mut)]">
-              {sn.name.toUpperCase()}
+        {mapReady && tilesFailed && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center pt-2">
+            <span className="fm-chip fm-chip-warn pointer-events-auto">
+              <WifiOff className="size-3.5" /> Basemap tiles unreachable — graticule chart mode
             </span>
           </div>
-        ))}
-
-        {/* personnel markers (draggable + clickable) */}
-        {state.personnel.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onPointerDown={(e) => handlePointerDown(e, "personnel", p.id)}
-            onClick={() => {
-              if (!justDraggedRef.current) onSelectAsset("personnel", p.id);
-            }}
-            className={cn(
-              "absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full outline-none transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-[var(--fm-accent)]",
-              p.status === "DISTRESS" && "fm-blink",
-            )}
-            style={{ left: `${p.pos.x}%`, top: `${p.pos.y}%` }}
-            title={`${p.callsign} — drag to reposition, click to inspect`}
-          >
-            <span
-              className={cn(
-                "relative grid size-7 place-items-center rounded-full border-2 bg-[var(--fm-paper)]",
-                p.status === "DISTRESS"
-                  ? "border-[var(--fm-alert)] text-[var(--fm-alert)]"
-                  : p.status === "ACTIVE"
-                    ? "border-[var(--fm-good)] text-[var(--fm-good)]"
-                    : p.status === "STANDBY"
-                      ? "border-[var(--fm-warn)] text-[var(--fm-warn)]"
-                      : "border-[var(--fm-accent-deep)] text-[var(--fm-mut)]",
-              )}
-            >
-              <User className="size-3.5" />
+        )}
+        {mapReady && !tilesFailed && link === "down" && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center pt-2">
+            <span className="fm-chip fm-chip-warn pointer-events-auto">
+              <WifiOff className="size-3.5" /> Uplink down — showing last cached tiles
             </span>
-            <span
-              className={cn(
-                "fm-mono absolute top-8 left-1/2 -translate-x-1/2 rounded-sm bg-[var(--fm-paper)] px-1 text-[8.5px] font-bold tracking-[0.1em] whitespace-nowrap",
-                p.status === "DISTRESS"
-                  ? "text-[var(--fm-alert)]"
-                  : "text-[var(--fm-mut)]",
-              )}
-            >
-              {p.callsign}
-            </span>
-          </button>
-        ))}
+          </div>
+        )}
 
-        {/* vehicle markers (draggable + clickable) */}
-        {state.vehicles.map((v) => (
-          <button
-            key={v.id}
-            type="button"
-            onPointerDown={(e) => handlePointerDown(e, "vehicle", v.id)}
-            onClick={() => {
-              if (!justDraggedRef.current) onSelectAsset("vehicle", v.id);
-            }}
-            className="absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded outline-none transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-[var(--fm-accent)]"
-            style={{ left: `${v.pos.x}%`, top: `${v.pos.y}%` }}
-            title={`${v.name} — drag to reposition, click to inspect`}
-          >
-            <span
-              className={cn(
-                "fm-plate grid size-6 place-items-center border-2",
-                v.available
-                  ? "border-[var(--fm-accent)] text-[var(--fm-accent)]"
-                  : "border-[var(--fm-line)] text-[var(--fm-mut)]",
-              )}
-            >
-              <Truck className="size-3" />
+        {/* SOS strip (when active) */}
+        {rescue && (
+          <div className="absolute top-3 left-3 z-10 flex max-w-lg flex-wrap items-center gap-2 border border-[rgba(208,92,75,0.35)] bg-[rgba(13,16,21,0.88)] px-3 py-2 backdrop-blur-sm">
+            <StatusBadge tone="alert" pulse>
+              ● SOS — {rescue.target.callsign}
+            </StatusBadge>
+            <span className="fm-mono text-[11px] text-[var(--fm-ink)]">
+              {rescue.name} · {rescue.km} km out · ETA{" "}
+              {rescue.speedKmh > 0 ? fmtEta((rescue.km / rescue.speedKmh) * 3_600_000) : "—"}
             </span>
-          </button>
-        ))}
+            <button
+              type="button"
+              onClick={() => store.resolveSos(rescue.target.id)}
+              className="fm-btn fm-btn-good fm-btn-sm ml-auto"
+            >
+              Mark rescued
+            </button>
+          </div>
+        )}
 
-        {/* corner ticks */}
-        <div className="pointer-events-none absolute inset-2">
-          <span className="absolute top-0 left-0 size-4 border-t border-l border-[var(--fm-line)]" />
-          <span className="absolute top-0 right-0 size-4 border-t border-r border-[var(--fm-line)]" />
-          <span className="absolute bottom-0 left-0 size-4 border-b border-l border-[var(--fm-line)]" />
-          <span className="absolute right-0 bottom-0 size-4 border-b border-r border-[var(--fm-line)]" />
-        </div>
-        <span className="fm-mono pointer-events-none absolute bottom-2 left-3 text-[9px] tracking-[0.2em] text-[var(--fm-mut)] uppercase">
-          {fmtUtc(now)} UTC · Sector 70S · 120×120 km
-        </span>
-        <span className="fm-mono pointer-events-none absolute right-3 bottom-2 text-[9px] tracking-[0.2em] text-[var(--fm-mut)] uppercase">
-          {state.personnel.length + state.vehicles.length} assets tracked
+        <span className="fm-mono pointer-events-none absolute bottom-2 left-3 z-10 text-[9px] tracking-[0.2em] text-[var(--fm-mut)] uppercase">
+          {fmtUtc(now)} UTC · {state.personnel.length + state.vehicles.length} assets tracked
         </span>
       </div>
 
-      {/* legend */}
+      {/* Legend */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[var(--fm-line-soft)] px-4 py-2">
         <LegendDot color="var(--fm-good)" label="Active" />
         <LegendDot color="var(--fm-warn)" label="Standby" />
-        <LegendDot color="var(--fm-accent)" label="Rest / vehicle" />
+        <LegendDot color="var(--fm-accent)" label="Rest / vehicle / site" />
         <LegendDot color="var(--fm-alert)" label="Distress / SOS" />
-        <LegendDot color="var(--fm-accent)" label="Supply node" />
         <span className="fm-mono ml-auto text-[9px] tracking-[0.14em] text-[var(--fm-mut)] uppercase">
-          Drag = reposition · Click = inspect
+          Click = inspect · Tiles © OpenStreetMap / CARTO
         </span>
       </div>
     </div>

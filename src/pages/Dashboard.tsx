@@ -146,10 +146,10 @@ export default function Dashboard() {
 
         <footer className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--fm-line-soft)] pt-3">
           <span className="fm-mono text-[9px] tracking-[0.18em] text-[var(--fm-mut)] uppercase">
-            POLARIS · Expedition command · Simulated field build
+            POLARIS · Expedition command · Field-linked build
           </span>
           <span className="fm-mono text-[9px] tracking-[0.18em] text-[var(--fm-mut)] uppercase">
-            Engine v4.2 · Local-first · Sector 70S
+            Engine v4.2 · Local-first sync to HQ · WGS-84 Maitri—Bharati sectors
           </span>
         </footer>
       </main>

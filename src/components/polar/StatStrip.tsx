@@ -52,7 +52,7 @@ function StatCard({
 }
 
 export function StatStrip({ store }: { store: PolarStore }) {
-  const { state } = store;
+  const { state, link, meshRttMs } = store;
   const now = useNow(5000);
 
   const active = state.personnel.filter((p) => p.status === "ACTIVE").length;
@@ -108,9 +108,15 @@ export function StatStrip({ store }: { store: PolarStore }) {
       <StatCard
         icon={Wind}
         label="Mesh Latency"
-        value={state.networkMode === "offline" ? "——" : state.networkMode === "lowband" ? "4.2s" : "320ms"}
-        sub={`Last ping ${Math.round((now - lastPing) / 1000)}s ago`}
-        tone={state.networkMode === "offline" ? "alert" : "sync"}
+        value={meshRttMs === null ? "——" : meshRttMs >= 1000 ? `${(meshRttMs / 1000).toFixed(1)}s` : `${meshRttMs}ms`}
+        sub={
+          link === "down"
+            ? "No uplink — events held"
+            : link === "lowband"
+              ? "Slow heartbeat measured"
+              : "Healthy heartbeat measured"
+        }
+        tone={link === "down" ? "alert" : link === "lowband" ? "warn" : "sync"}
       />
     </div>
   );
