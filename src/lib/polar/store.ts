@@ -2,18 +2,22 @@ import { api } from "@/convex/_generated/api";
 import { useConvex } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { routeDistanceKm } from "./geo";
-import { SEED_CARGO, SEED_PERSONNEL, SEED_ROUTES, SEED_VEHICLES } from "./seed";
+import { SEED_BEACONS, SEED_CARGO, SEED_PERSONNEL, SEED_ROUTES, SEED_VEHICLES } from "./seed";
 import type {
+  Beacon,
   CargoItem,
   CargoLogEntry,
   GeoPos,
   LinkStatus,
+  Personnel,
   PersonnelStatus,
   PlannedRoute,
   PolarState,
   QueuedEvent,
   RouteWaypoint,
   StockStatus,
+  TrackableKind,
+  Vehicle,
 } from "./types";
 import { useNetworkStatus } from "./use-network-status";
 
@@ -86,6 +90,7 @@ function seedState(): PolarState {
     drillMode: null,
     personnel: SEED_PERSONNEL,
     vehicles: SEED_VEHICLES,
+    beacons: SEED_BEACONS,
     cargo: SEED_CARGO,
     cargoLog: [],
     pending: [],
@@ -167,6 +172,26 @@ async function sendEvent(client: ConvexClient, evt: QueuedEvent) {
         callsign: evt.sos.callsign,
         pos: evt.sos.pos,
         resolved: evt.sos.resolved,
+        at: evt.at,
+      });
+      return;
+    case "ASSET_ADD":
+      if (!evt.add) return;
+      await client.mutation(api.expedition.registerAsset, {
+        kind: evt.add.kind,
+        assetId: evt.add.id,
+        name: evt.add.name,
+        meta: evt.add.meta,
+        pos: evt.add.pos,
+        at: evt.at,
+      });
+      return;
+    case "ASSET_REMOVE":
+      if (!evt.remove) return;
+      await client.mutation(api.expedition.retireAsset, {
+        kind: evt.remove.kind,
+        assetId: evt.remove.id,
+        name: evt.remove.name,
         at: evt.at,
       });
       return;
@@ -336,13 +361,143 @@ export function usePolarStore() {
     });
   }, []);
 
+  /** Register a new tracked asset — roster + map + server, local-first. */
+  const addAsset = useCallback(
+    (input: {
+      kind: TrackableKind;
+      name: string;
+      meta: string;
+      pos: GeoPos;
+      callsign?: string;
+    }): string | null => {
+      if (!input.name.trim()) return null;
+      const clientId = uid("add");
+      setState((s) => {
+        const pos = input.pos;
+        const label = input.name.trim();
+        if (input.kind === "personnel") {
+          const id = uid("p");
+          const person: Personnel = {
+            id,
+            callsign: input.callsign?.trim() || `FD-${String(s.personnel.length + 1).padStart(2, "0")}`,
+            name: label,
+            role: input.meta || "Field Operator",
+            status: "ACTIVE",
+            battery: 100,
+            oxygen: 100,
+            supplies: 100,
+            lastPing: Date.now(),
+            pos,
+          };
+          return {
+            ...s,
+            personnel: [...s.personnel, person],
+            pending: [
+              { clientId, at: Date.now(), kind: "ASSET_ADD", label: `${person.callsign} registered`, add: { kind: "personnel", id, name: person.name, meta: person.role, pos } },
+              ...s.pending,
+            ],
+          };
+        }
+        if (input.kind === "vehicle") {
+          const id = uid("v");
+          const vehicle: Vehicle = {
+            id,
+            name: label,
+            type: input.meta || "Utility Vehicle",
+            fuel: 100,
+            speedKmh: 18,
+            pos,
+            available: true,
+          };
+          return {
+            ...s,
+            vehicles: [...s.vehicles, vehicle],
+            pending: [
+              { clientId, at: Date.now(), kind: "ASSET_ADD", label: `${vehicle.name} registered`, add: { kind: "vehicle", id, name: vehicle.name, meta: vehicle.type, pos } },
+              ...s.pending,
+            ],
+          };
+        }
+        const id = uid("b");
+        const beacon: Beacon = {
+          id,
+          name: label,
+          kind: input.meta || "GPS marker",
+          pos,
+          lastFix: Date.now(),
+          battery: 100,
+        };
+        return {
+          ...s,
+          beacons: [...s.beacons, beacon],
+          pending: [
+            { clientId, at: Date.now(), kind: "ASSET_ADD", label: `${beacon.name} deployed`, add: { kind: "beacon", id, name: beacon.name, meta: beacon.kind, pos } },
+            ...s.pending,
+          ],
+        };
+      });
+      return clientId;
+    },
+    [],
+  );
+
+  /** Retire a tracked asset — removed from the roster, map and server registry. */
+  const removeAsset = useCallback((kind: TrackableKind, id: string) => {
+    setState((s) => {
+      if (kind === "personnel") {
+        const p = s.personnel.find((x) => x.id === id);
+        if (!p) return s;
+        return {
+          ...s,
+          personnel: s.personnel.filter((x) => x.id !== id),
+          pending: [
+            { clientId: uid("rm"), at: Date.now(), kind: "ASSET_REMOVE", label: `${p.callsign} retired`, remove: { kind, id, name: p.name } },
+            ...s.pending,
+          ],
+        };
+      }
+      if (kind === "vehicle") {
+        const v = s.vehicles.find((x) => x.id === id);
+        if (!v) return s;
+        return {
+          ...s,
+          vehicles: s.vehicles.filter((x) => x.id !== id),
+          pending: [
+            { clientId: uid("rm"), at: Date.now(), kind: "ASSET_REMOVE", label: `${v.name} retired`, remove: { kind, id, name: v.name } },
+            ...s.pending,
+          ],
+        };
+      }
+      const b = s.beacons.find((x) => x.id === id);
+      if (!b) return s;
+      return {
+        ...s,
+        beacons: s.beacons.filter((x) => x.id !== id),
+        pending: [
+          { clientId: uid("rm"), at: Date.now(), kind: "ASSET_REMOVE", label: `${b.name} recovered`, remove: { kind, id, name: b.name } },
+          ...s.pending,
+        ],
+      };
+    });
+  }, []);
+
+  /** Toggle a live device-GPS watch on a beacon (operator-handset tracking). */
+  const setBeaconLive = useCallback((id: string, live: boolean) => {
+    setState((s) => ({
+      ...s,
+      beacons: s.beacons.map((b) => (b.id === id ? { ...b, live } : b)),
+    }));
+  }, []);
+
   const moveAsset = useCallback(
-    (kind: "personnel" | "vehicle", id: string, pos: GeoPos) => {
+    (kind: TrackableKind, id: string, pos: GeoPos) => {
       setState((s) => {
         const label =
           kind === "personnel"
             ? s.personnel.find((x) => x.id === id)?.callsign ?? id
-            : s.vehicles.find((x) => x.id === id)?.name ?? id;
+            : kind === "vehicle"
+              ? s.vehicles.find((x) => x.id === id)?.name ?? id
+              : s.beacons.find((x) => x.id === id)?.name ?? id;
         const clientId = uid("mv");
         return {
           ...s,
@@ -356,6 +511,10 @@ export function usePolarStore() {
             kind === "vehicle"
               ? s.vehicles.map((x) => (x.id === id ? { ...x, pos } : x))
               : s.vehicles,
+          beacons:
+            kind === "beacon"
+              ? s.beacons.map((x) => (x.id === id ? { ...x, pos, lastFix: Date.now() } : x))
+              : s.beacons,
           pending: [
             {
               clientId,
@@ -473,6 +632,9 @@ export function usePolarStore() {
     logCargo,
     setPersonnelStatus,
     moveAsset,
+    addAsset,
+    removeAsset,
+    setBeaconLive,
     raiseSos,
     resolveSos,
     saveRoute,

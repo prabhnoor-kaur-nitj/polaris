@@ -81,13 +81,36 @@ const schema = defineSchema(
     }).index("at", ["at"]),
     assetPositions: defineTable({
       userId: v.id("users"),
-      assetKind: v.union(v.literal("personnel"), v.literal("vehicle")),
+      assetKind: v.union(
+        v.literal("personnel"),
+        v.literal("vehicle"),
+        v.literal("beacon"),
+      ),
       assetId: v.string(),
       label: v.string(),
       lat: v.number(),
       lon: v.number(),
       at: v.number(),
     }).index("at", ["at"]),
+    // Fleet registry: an asset's latest known lifecycle state. registerAsset
+    // upserts (idempotent by kind+assetId), retireAsset marks it retired.
+    trackedAssets: defineTable({
+      userId: v.id("users"),
+      kind: v.union(
+        v.literal("personnel"),
+        v.literal("vehicle"),
+        v.literal("beacon"),
+      ),
+      assetId: v.string(),
+      name: v.string(),
+      meta: v.optional(v.string()),
+      retired: v.boolean(),
+      lat: v.number(),
+      lon: v.number(),
+      at: v.number(),
+    })
+      .index("by_asset", ["kind", "assetId"])
+      .index("at", ["at"]),
     routes: defineTable({
       userId: v.id("users"),
       name: v.string(),

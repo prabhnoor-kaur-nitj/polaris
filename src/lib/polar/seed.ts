@@ -1,4 +1,5 @@
 import type {
+  Beacon,
   CargoItem,
   Personnel,
   PlannedRoute,
@@ -141,6 +142,25 @@ export const SEED_VEHICLES: Vehicle[] = [
     speedKmh: 0,
     pos: { lat: -70.6621, lon: 11.8203 },
     available: false,
+  },
+];
+
+export const SEED_BEACONS: Beacon[] = [
+  {
+    id: "b-sc3",
+    name: "Supply Cache SC-3",
+    kind: "Supply cache",
+    pos: { lat: -70.6431, lon: 11.782 },
+    lastFix: Date.now() - 600_000,
+    battery: 71,
+  },
+  {
+    id: "b-w2",
+    name: "Weather Mast W-2",
+    kind: "Weather mast",
+    pos: { lat: -70.5955, lon: 11.964 },
+    lastFix: Date.now() - 1_800_000,
+    battery: 44,
   },
 ];
 

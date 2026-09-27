@@ -7,12 +7,12 @@ import { StatusBadge, useNow } from "@/components/polar/hud";
 import { fmtLat, fmtLon } from "@/lib/polar/geo";
 import { STATIONS, SUPPLY_NODES } from "@/lib/polar/seed";
 import { distanceKm, fmtUtc, type PolarStore } from "@/lib/polar/store";
-import type { GeoPos } from "@/lib/polar/types";
+import type { GeoPos, TrackableKind } from "@/lib/polar/types";
 import { cn } from "@/lib/utils";
 import * as maplibregl from "maplibre-gl";
 import type { GeoJSONSource, Map as MlMap, Marker as MlMarker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Move, Navigation, WifiOff } from "lucide-react";
+import { Compass, Crosshair, Move, Navigation, TriangleAlert, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const TILE_STYLE = {
@@ -41,6 +41,8 @@ const FIELD_BOUNDS: maplibregl.LngLatBoundsLike = [
 ];
 
 const ICONS = {
+  beacon:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/><path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/><path d="M16.2 4.8c2 2 2.26 5.10.8 7.47"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/><path d="M12 12v9"/><path d="m9 18 3 3 3-3"/></svg>',
   user:
     '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   truck:
@@ -76,12 +78,16 @@ function toneForPersonnel(status: string): MarkerTone {
   return "muted";
 }
 
+export type AssetSelection = { kind: TrackableKind; id: string } | null;
+
 export function TacticalMap({
   store,
   onSelectAsset,
+  focus,
 }: {
   store: PolarStore;
-  onSelectAsset: (kind: "personnel" | "vehicle", id: string) => void;
+  onSelectAsset: (kind: TrackableKind, id: string) => void;
+  focus: { kind: TrackableKind; id: string; nonce: number } | null;
 }) {
   const { state, moveAsset, link } = store;
   const now = useNow(1000);
@@ -97,6 +103,7 @@ export function TacticalMap({
 
   const [mapReady, setMapReady] = useState(false);
   const [tilesFailed, setTilesFailed] = useState(false);
+  const [mapCrashed, setMapCrashed] = useState<string | null>(null);
   const [view, setView] = useState<{ lat: number; lon: number; zoom: number }>({
     lat: -70.2,
     lon: 30,
@@ -108,17 +115,29 @@ export function TacticalMap({
     const container = containerRef.current;
     if (!container || mapRef.current) return;
 
-    const map = new maplibregl.Map({
-      container,
-      style: TILE_STYLE as maplibregl.StyleSpecification,
-      center: [30, -70.2],
-      zoom: 3,
-      attributionControl: false,
-      renderWorldCopies: false,
-      maxZoom: 11,
-      dragRotate: false,
-      touchPitch: false,
-    });
+    let map: MlMap;
+    try {
+      map = new maplibregl.Map({
+        container,
+        style: TILE_STYLE as maplibregl.StyleSpecification,
+        center: [30, -70.2],
+        zoom: 3,
+        attributionControl: false,
+        renderWorldCopies: false,
+        maxZoom: 11,
+        dragRotate: false,
+        touchPitch: false,
+      });
+    } catch (err) {
+      // No WebGL2 in the runtime (some sandboxed preview iframes): report it
+      // on the instrument instead of silently rendering an empty box.
+      setMapCrashed(
+        err instanceof Error
+          ? err.message
+          : "Map engine failed to start (WebGL unavailable?)",
+      );
+      return;
+    }
     mapRef.current = map;
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
@@ -294,12 +313,15 @@ export function TacticalMap({
     }
   }, [mapReady, state.routes, state.personnel, state.vehicles]);
 
-  /* ---------- draggable asset markers, synced with store state ---------- */
+  /* ---------- draggable asset markers (personnel, vehicles, beacons) ---------- */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
 
-    const want = new Map<string, { kind: "personnel" | "vehicle"; id: string; label: string; tone: MarkerTone; pos: GeoPos; round: boolean }>();
+    const want = new Map<
+      string,
+      { kind: TrackableKind; id: string; label: string; tone: MarkerTone; pos: GeoPos; round: boolean; icon: string }
+    >();
     for (const p of state.personnel) {
       want.set(`personnel:${p.id}`, {
         kind: "personnel",
@@ -308,6 +330,7 @@ export function TacticalMap({
         tone: toneForPersonnel(p.status),
         pos: p.pos,
         round: true,
+        icon: ICONS.user,
       });
     }
     for (const v of state.vehicles) {
@@ -318,6 +341,18 @@ export function TacticalMap({
         tone: v.available ? "accent" : "muted",
         pos: v.pos,
         round: false,
+        icon: ICONS.truck,
+      });
+    }
+    for (const b of state.beacons) {
+      want.set(`beacon:${b.id}`, {
+        kind: "beacon",
+        id: b.id,
+        label: b.live ? "LIVE GPS" : "",
+        tone: b.live ? "good" : "accent",
+        pos: b.pos,
+        round: false,
+        icon: ICONS.beacon,
       });
     }
 
@@ -325,10 +360,11 @@ export function TacticalMap({
       let marker = assetMarkersRef.current.get(key);
       if (!marker) {
         const el = buildMarkerEl({
-          icon: spec.kind === "personnel" ? ICONS.user : ICONS.truck,
+          icon: spec.icon,
           label: spec.label,
           tone: spec.tone,
           round: spec.round,
+          small: spec.kind === "beacon",
         });
         el.addEventListener("click", () => {
           if (justDraggedRef.current || draggingRef.current) return;
@@ -361,6 +397,8 @@ export function TacticalMap({
         marker.setLngLat([spec.pos.lon, spec.pos.lat]);
         const el = marker.getElement();
         el.dataset.tone = spec.tone;
+        const labelEl = el.querySelector(".polar-marker-label");
+        if (labelEl) labelEl.textContent = spec.label;
       }
     }
 
@@ -370,7 +408,21 @@ export function TacticalMap({
         assetMarkersRef.current.delete(key);
       }
     }
-  }, [mapReady, state.personnel, state.vehicles, moveAsset]);
+  }, [mapReady, state.personnel, state.vehicles, state.beacons, moveAsset]);
+
+  /* ---------- locate: fly to a rostered asset on demand ---------- */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !focus) return;
+    const pos =
+      focus.kind === "personnel"
+        ? state.personnel.find((p) => p.id === focus.id)?.pos
+        : focus.kind === "vehicle"
+          ? state.vehicles.find((v) => v.id === focus.id)?.pos
+          : state.beacons.find((b) => b.id === focus.id)?.pos;
+    if (!pos) return;
+    map.flyTo({ center: [pos.lon, pos.lat], zoom: Math.max(map.getZoom(), 8), duration: 900 });
+  }, [focus, mapReady, state.personnel, state.vehicles, state.beacons]);
 
   /* ---------- SOS strip ---------- */
   const rescue = useMemo(() => {
@@ -402,6 +454,7 @@ export function TacticalMap({
         </h2>
         <div className="ml-auto flex items-center gap-2">
           <StatusBadge tone="ice">
+            <Compass className="size-3" />
             {fmtLat(view.lat)} {fmtLon(view.lon)} · Z{view.zoom.toFixed(1)}
           </StatusBadge>
           <StatusBadge tone="muted">
@@ -435,6 +488,19 @@ export function TacticalMap({
             </span>
           </div>
         )}
+        {mapCrashed && (
+          <div className="absolute inset-0 z-20 grid place-items-center p-4">
+            <div className="fm-panel-2 flex max-w-md flex-col items-center gap-2 px-5 py-4 text-center">
+              <TriangleAlert className="size-5 text-[var(--fm-warn)]" />
+              <span className="fm-mono text-[11px] font-semibold text-[var(--fm-ink)]">
+                Map engine offline
+              </span>
+              <span className="fm-mono text-[10px] leading-relaxed text-[var(--fm-mut)]">
+                {mapCrashed} — assets remain listed in the tracker; graticule chart mode active.
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* SOS strip (when active) */}
         {rescue && (
@@ -457,7 +523,7 @@ export function TacticalMap({
         )}
 
         <span className="fm-mono pointer-events-none absolute bottom-2 left-3 z-10 text-[9px] tracking-[0.2em] text-[var(--fm-mut)] uppercase">
-          {fmtUtc(now)} UTC · {state.personnel.length + state.vehicles.length} assets tracked
+          {fmtUtc(now)} UTC · {state.personnel.length + state.vehicles.length + state.beacons.length} assets tracked
         </span>
       </div>
 
@@ -465,7 +531,7 @@ export function TacticalMap({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[var(--fm-line-soft)] px-4 py-2">
         <LegendDot color="var(--fm-good)" label="Active" />
         <LegendDot color="var(--fm-warn)" label="Standby" />
-        <LegendDot color="var(--fm-accent)" label="Rest / vehicle / site" />
+        <LegendDot color="var(--fm-accent)" label="Rest / vehicle / beacon / site" />
         <LegendDot color="var(--fm-alert)" label="Distress / SOS" />
         <span className="fm-mono ml-auto text-[9px] tracking-[0.14em] text-[var(--fm-mut)] uppercase">
           Click = inspect · Tiles © OpenStreetMap / CARTO

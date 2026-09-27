@@ -73,7 +73,11 @@ export const setPersonnelStatus = mutation({
 /** Record an asset position fix — the ground truth of a field GPS/RFID report. */
 export const recordAssetPosition = mutation({
   args: {
-    assetKind: v.union(v.literal("personnel"), v.literal("vehicle")),
+    assetKind: v.union(
+      v.literal("personnel"),
+      v.literal("vehicle"),
+      v.literal("beacon"),
+    ),
     assetId: v.string(),
     label: v.string(),
     pos: geoValidator,
@@ -83,6 +87,72 @@ export const recordAssetPosition = mutation({
     const { userId } = await requirePortalUser(ctx);
     const { pos, ...rest } = args;
     return await ctx.db.insert("assetPositions", { ...rest, ...pos, userId });
+  },
+});
+
+/** Register a new tracked asset in the fleet registry (idempotent upsert). */
+export const registerAsset = mutation({
+  args: {
+    kind: v.union(v.literal("personnel"), v.literal("vehicle"), v.literal("beacon")),
+    assetId: v.string(),
+    name: v.string(),
+    meta: v.optional(v.string()),
+    pos: geoValidator,
+    at: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { userId } = await requirePortalUser(ctx);
+    const existing = await ctx.db
+      .query("trackedAssets")
+      .withIndex("by_asset", (q) => q.eq("kind", args.kind).eq("assetId", args.assetId))
+      .unique();
+    const row = {
+      userId,
+      kind: args.kind,
+      assetId: args.assetId,
+      name: args.name,
+      meta: args.meta,
+      retired: false,
+      lat: args.pos.lat,
+      lon: args.pos.lon,
+      at: args.at,
+    };
+    if (existing) {
+      await ctx.db.patch(existing._id, row);
+      return existing._id;
+    }
+    return await ctx.db.insert("trackedAssets", row);
+  },
+});
+
+/** Retire a tracked asset (recovered crew member, lost beacon, scrapped vehicle). */
+export const retireAsset = mutation({
+  args: {
+    kind: v.union(v.literal("personnel"), v.literal("vehicle"), v.literal("beacon")),
+    assetId: v.string(),
+    name: v.string(),
+    at: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { userId } = await requirePortalUser(ctx);
+    const existing = await ctx.db
+      .query("trackedAssets")
+      .withIndex("by_asset", (q) => q.eq("kind", args.kind).eq("assetId", args.assetId))
+      .unique();
+    if (existing) {
+      await ctx.db.patch(existing._id, { retired: true, at: args.at });
+      return existing._id;
+    }
+    return await ctx.db.insert("trackedAssets", {
+      userId,
+      kind: args.kind,
+      assetId: args.assetId,
+      name: args.name,
+      retired: true,
+      lat: 0,
+      lon: 0,
+      at: args.at,
+    });
   },
 });
 
@@ -155,12 +225,13 @@ export const getFeed = query({
   handler: async (ctx, { limit = 80 }) => {
     await requirePortalUser(ctx);
     const clamped = Math.max(1, Math.min(200, limit));
-    const [cargo, statuses, positions, routes, sos] = await Promise.all([
+    const [cargo, statuses, positions, routes, sos, registry] = await Promise.all([
       ctx.db.query("cargoLog").order("desc").take(clamped),
       ctx.db.query("personnelStatus").order("desc").take(clamped),
       ctx.db.query("assetPositions").order("desc").take(clamped),
       ctx.db.query("routes").order("desc").take(clamped),
       ctx.db.query("sosIncidents").order("desc").take(clamped),
+      ctx.db.query("trackedAssets").order("desc").take(clamped),
     ]);
     const feed = [
       ...cargo.map((d) => ({
@@ -185,6 +256,12 @@ export const getFeed = query({
         _id: d._id,
         kind: "ROUTE" as const,
         label: `Route planned · ${d.name}`,
+        at: d.at,
+      })),
+      ...registry.map((d) => ({
+        _id: d._id,
+        kind: (d.retired ? "ASSET_REMOVE" : "ASSET_ADD") as "ASSET_REMOVE" | "ASSET_ADD",
+        label: `${d.retired ? "Retired" : "Registered"} · ${d.name}`,
         at: d.at,
       })),
       ...sos.map((d) => ({

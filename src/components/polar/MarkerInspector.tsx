@@ -1,14 +1,17 @@
 import { Meter, StatusBadge, useNow } from "@/components/polar/hud";
 import { fmtLat, fmtLon } from "@/lib/polar/geo";
+import { deviceFix } from "@/lib/polar/gps";
 import { fmtRel, fmtUtc, type PolarStore } from "@/lib/polar/store";
-import type { Personnel, PersonnelStatus, Vehicle } from "@/lib/polar/types";
+import type { Beacon, Personnel, PersonnelStatus, TrackableKind, Vehicle } from "@/lib/polar/types";
 import { cn } from "@/lib/utils";
 import {
   BatteryCharging,
   Clock,
+  Crosshair,
   Flame,
   Gauge,
   Radio,
+  Satellite,
   ShieldAlert,
   Thermometer,
   User,
@@ -21,6 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useState } from "react";
 
 const STATUS_TONE: Record<PersonnelStatus, "alert" | "sync" | "warn" | "muted"> = {
   DISTRESS: "alert",
@@ -35,10 +39,11 @@ export function MarkerInspector({
   onClose,
 }: {
   store: PolarStore;
-  selection: { kind: "personnel" | "vehicle"; id: string } | null;
+  selection: { kind: TrackableKind; id: string } | null;
   onClose: () => void;
 }) {
   const now = useNow(1000);
+  const [gpsMsg, setGpsMsg] = useState<string | null>(null);
   const person: Personnel | undefined =
     selection?.kind === "personnel"
       ? store.state.personnel.find((p) => p.id === selection.id)
@@ -47,8 +52,23 @@ export function MarkerInspector({
     selection?.kind === "vehicle"
       ? store.state.vehicles.find((v) => v.id === selection.id)
       : undefined;
+  const beacon: Beacon | undefined =
+    selection?.kind === "beacon"
+      ? store.state.beacons.find((b) => b.id === selection.id)
+      : undefined;
 
-  const open = Boolean(person || vehicle);
+  const open = Boolean(person || vehicle || beacon);
+
+  async function gpsFixNow(kind: TrackableKind, id: string) {
+    setGpsMsg("Acquiring fix…");
+    try {
+      const fix = await deviceFix();
+      store.moveAsset(kind, id, { lat: fix.lat, lon: fix.lon });
+      setGpsMsg(`Fix ±${fix.accuracyM} m — ${fix.lat.toFixed(4)}, ${fix.lon.toFixed(4)}`);
+    } catch (err) {
+      setGpsMsg(err instanceof Error ? err.message : "GPS fix failed");
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -92,6 +112,13 @@ export function MarkerInspector({
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => gpsFixNow("personnel", person.id)}
+              className="fm-btn fm-btn-quiet fm-btn-sm"
+            >
+              <Crosshair className="size-3.5" /> GPS fix
+            </button>
             {(["ACTIVE", "STANDBY", "REST"] as const).map((s) => (
               <button
                 key={s}
@@ -122,9 +149,86 @@ export function MarkerInspector({
               </button>
             )}
           </div>
+          {gpsMsg && <p className="fm-mono text-[10px] text-[var(--fm-accent)]">{gpsMsg}</p>}
 
           <p className="fm-mono text-[9px] tracking-[0.1em] text-[var(--fm-mut)] uppercase">
             Edits write to the local store first{store.link === "down" ? " · uplink down, queued for sync" : " · streaming to expedition HQ"}
+          </p>
+        </DialogContent>
+      )}
+
+      {beacon && selection?.kind === "beacon" && (
+        <DialogContent className="fm max-w-md border-[var(--fm-line)] bg-[var(--fm-paper)] p-6 text-[var(--fm-ink)]" showCloseButton>
+          <DialogHeader>
+            <div className="flex items-center gap-2.5">
+              <span className="fm-plate size-10">
+                <Satellite className="size-5 text-[var(--fm-accent)]" />
+              </span>
+              <div>
+                <DialogTitle className="fm-mono text-base font-bold tracking-[0.12em] text-[var(--fm-ink)]">
+                  {beacon.name.toUpperCase()}
+                </DialogTitle>
+                <DialogDescription className="fm-mono text-[11px] text-[var(--fm-mut)]">
+                  {beacon.kind} · {fmtLat(beacon.pos.lat)} {fmtLon(beacon.pos.lon)}
+                </DialogDescription>
+              </div>
+              <span className="ml-auto">
+                <StatusBadge tone={beacon.live ? "sync" : "ice"} pulse={beacon.live}>
+                  {beacon.live ? "Live GPS" : "Deployed"}
+                </StatusBadge>
+              </span>
+            </div>
+          </DialogHeader>
+
+          <div className="fm-panel-2 grid grid-cols-2 gap-x-4 gap-y-2.5 p-3">
+            <Telemetry
+              icon={Clock}
+              label="Last Fix"
+              value={beacon.lastFix ? `${fmtRel(beacon.lastFix)} · ${fmtUtc(beacon.lastFix)}Z` : "—"}
+            />
+            <Telemetry
+              icon={BatteryCharging}
+              label="Battery"
+              value={beacon.battery !== undefined ? `${beacon.battery}%` : "—"}
+            />
+            <Telemetry icon={Gauge} label="Latitude" value={fmtLat(beacon.pos.lat)} />
+            <Telemetry icon={Gauge} label="Longitude" value={fmtLon(beacon.pos.lon)} />
+          </div>
+
+          <Meter label="Beacon cell" value={beacon.battery ?? 0} tone={(beacon.battery ?? 100) < 30 ? "alert" : undefined} />
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => gpsFixNow("beacon", beacon.id)}
+              className="fm-btn fm-btn-quiet fm-btn-sm"
+            >
+              <Crosshair className="size-3.5" /> GPS fix now
+            </button>
+            <button
+              type="button"
+              onClick={() => store.setBeaconLive(beacon.id, !beacon.live)}
+              className={cn("fm-btn fm-btn-sm", beacon.live ? "fm-btn-quiet" : "fm-btn-good")}
+            >
+              <Radio className="size-3.5" />
+              {beacon.live ? "Stop live track" : "Live device track"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                store.removeAsset("beacon", beacon.id);
+                onClose();
+              }}
+              className="fm-btn fm-btn-alert fm-btn-sm ml-auto"
+            >
+              Recover
+            </button>
+          </div>
+          {gpsMsg && (
+            <p className="fm-mono text-[10px] text-[var(--fm-accent)]">{gpsMsg}</p>
+          )}
+          <p className="fm-mono text-[9px] tracking-[0.1em] text-[var(--fm-mut)] uppercase">
+            Standalone beacon · device GPS writes through the local store to HQ
           </p>
         </DialogContent>
       )}
@@ -166,10 +270,10 @@ export function MarkerInspector({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => store.moveAsset("vehicle", vehicle.id, vehicle.pos)}
+              onClick={() => gpsFixNow("vehicle", vehicle.id)}
               className="fm-btn fm-btn-quiet fm-btn-sm"
             >
-              Reposition via map drag
+              <Crosshair className="size-3.5" /> GPS fix
             </button>
             <span className="ml-auto">
               <StatusBadge tone="ice">
@@ -177,9 +281,10 @@ export function MarkerInspector({
               </StatusBadge>
             </span>
           </div>
+          {gpsMsg && <p className="fm-mono text-[10px] text-[var(--fm-accent)]">{gpsMsg}</p>}
 
           <p className="fm-mono text-[9px] tracking-[0.1em] text-[var(--fm-mut)] uppercase">
-            Fleet node · telemetry from local buffer
+            Fleet node · position fixes stream to HQ when the uplink allows
           </p>
         </DialogContent>
       )}

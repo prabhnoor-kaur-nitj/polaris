@@ -22,6 +22,9 @@ export type PersonnelStatus = "ACTIVE" | "STANDBY" | "REST" | "DISTRESS";
 
 export type AssetKind = "PERSONNEL" | "VEHICLE" | "SUPPLY_NODE" | "STATION";
 
+/** Everything the tactical map tracks as a draggable, GPS-fixed marker. */
+export type TrackableKind = "personnel" | "vehicle" | "beacon";
+
 export interface Station {
   id: string;
   name: string;
@@ -56,6 +59,20 @@ export interface Vehicle {
   speedKmh: number;
   pos: GeoPos;
   available: boolean;
+}
+
+/** A standalone GPS beacon (supply cache tag, weather mast, dropped marker). */
+export interface Beacon {
+  id: string;
+  name: string;
+  /** Beacon class, e.g. "Supply cache" / "Weather mast" / "GPS marker". */
+  kind: string;
+  pos: GeoPos;
+  /** Live device-GPS watch active — position follows the operator handset. */
+  live?: boolean;
+  /** Epoch ms of the last position fix. */
+  lastFix?: number;
+  battery?: number; // %
 }
 
 export interface CargoItem {
@@ -107,7 +124,14 @@ export interface QueuedEvent {
   /** Idempotency key — same value is sent to the server mutation. */
   clientId: string;
   at: number;
-  kind: "CARGO_LOG" | "STATUS" | "ASSET_MOVE" | "ROUTE" | "SOS";
+  kind:
+    "CARGO_LOG"
+    | "STATUS"
+    | "ASSET_MOVE"
+    | "ROUTE"
+    | "SOS"
+    | "ASSET_ADD"
+    | "ASSET_REMOVE";
   label: string;
   cargo?: {
     itemId: string;
@@ -118,13 +142,15 @@ export interface QueuedEvent {
   };
   status?: { personnelId: string; callsign: string; status: PersonnelStatus };
   move?: {
-    assetKind: "personnel" | "vehicle";
+    assetKind: TrackableKind;
     assetId: string;
     label: string;
     pos: GeoPos;
   };
   route?: { name: string; waypoints: RouteWaypoint[] };
   sos?: { personnelId: string; callsign: string; pos: GeoPos; resolved: boolean };
+  add?: { kind: TrackableKind; id: string; name: string; meta?: string; pos: GeoPos };
+  remove?: { kind: TrackableKind; id: string; name: string };
 }
 
 /** A committed server event, as returned by the expedition feed. */
@@ -156,6 +182,7 @@ export interface PolarState {
   drillMode: LinkStatus | null;
   personnel: Personnel[];
   vehicles: Vehicle[];
+  beacons: Beacon[];
   cargo: CargoItem[];
   cargoLog: CargoLogEntry[];
   pending: QueuedEvent[];
