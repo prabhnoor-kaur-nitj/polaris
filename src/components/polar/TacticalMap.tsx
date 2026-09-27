@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import * as maplibregl from "maplibre-gl";
 import type { GeoJSONSource, Map as MlMap, Marker as MlMarker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Compass, Crosshair, Move, Navigation, TriangleAlert, WifiOff } from "lucide-react";
+import { Compass, Crosshair, LocateFixed, Move, Navigation, TriangleAlert, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const TILE_STYLE = {
@@ -39,6 +39,12 @@ const FIELD_BOUNDS: maplibregl.LngLatBoundsLike = [
   [10.5, -71.2],
   [77.5, -69.0],
 ];
+
+/** Field anchor: Maitri station — the sector the roster calls home. */
+const MAITRI = { lat: -70.6667, lon: 11.8667 };
+
+/** How far the viewport may drift from Maitri before we warn (km). */
+const FIELD_RADIUS_KM = 800;
 
 const ICONS = {
   beacon:
@@ -110,6 +116,10 @@ export function TacticalMap({
     zoom: 3,
   });
 
+  /** Camera far outside the expedition sector (device-GPS fixes can do this). */
+  const outOfField =
+    mapReady && distanceKm({ lat: view.lat, lon: view.lon }, MAITRI) > FIELD_RADIUS_KM;
+
   /* ---------- create / destroy the map ---------- */
   useEffect(() => {
     const container = containerRef.current;
@@ -179,6 +189,32 @@ export function TacticalMap({
       setTilesFailed(false);
     };
   }, []);
+
+  /* ---------- basemap health probe (some environments serve empty tiles) ---------- */
+  useEffect(() => {
+    if (!mapReady) return;
+    let cancelled = false;
+    const t = window.setTimeout(async () => {
+      try {
+        const res = await fetch("https://a.basemaps.cartocdn.com/dark_all/3/4/3.png", {
+          cache: "no-store",
+        });
+        const buf = await res.arrayBuffer();
+        const type = res.headers.get("content-type") ?? "";
+        // A real raster tile is a multi-kilobyte PNG; sandboxed previews that
+        // intercept tile requests tend to return empty or non-image bodies.
+        if (!cancelled && (!res.ok || buf.byteLength < 100 || !type.includes("image"))) {
+          setTilesFailed(true);
+        }
+      } catch {
+        if (!cancelled) setTilesFailed(true);
+      }
+    }, 2500);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [mapReady]);
 
   /* ---------- static site markers (stations + supply nodes) ---------- */
   useEffect(() => {
@@ -437,6 +473,11 @@ export function TacticalMap({
     return best ? { ...best, target } : null;
   }, [state.personnel, state.vehicles]);
 
+  /** Fly the camera back to the expedition field sectors. */
+  function flyHome() {
+    mapRef.current?.fitBounds(FIELD_BOUNDS, { padding: 48, duration: 900, maxZoom: 4 });
+  }
+
   function fmtEta(ms: number) {
     const totalMin = Math.max(0, Math.round(ms / 60000));
     const h = Math.floor(totalMin / 60);
@@ -460,6 +501,14 @@ export function TacticalMap({
           <StatusBadge tone="muted">
             <Move className="size-3" /> Drag = GPS fix
           </StatusBadge>
+          <button
+            type="button"
+            onClick={flyHome}
+            title="Recenter on the Maitri — Bharati expedition sectors"
+            className="fm-chip transition-colors hover:text-[var(--fm-ink)]"
+          >
+            <LocateFixed className="size-3.5" /> Field
+          </button>
         </div>
       </div>
 
@@ -500,6 +549,26 @@ export function TacticalMap({
               </span>
             </div>
           </div>
+        )}
+
+        {/* Out-of-field warning: device-GPS fixes can drag the camera to the operator */}
+        {outOfField && (
+          <div className="pointer-events-none absolute inset-x-0 top-12 z-10 flex justify-center px-4">
+            <div className="fm-panel-2 pointer-events-auto flex max-w-md flex-wrap items-center gap-x-3 gap-y-1.5 px-3.5 py-2.5">
+              <TriangleAlert className="size-4 shrink-0 text-[var(--fm-warn)]" />
+              <span className="fm-mono text-[10.5px] leading-relaxed text-[var(--fm-ink)]">
+                Viewport {Math.round(distanceKm({ lat: view.lat, lon: view.lon }, MAITRI)).toLocaleString()} km outside the
+                expedition sector — likely a device-GPS fix at the operator's real location.
+              </span>
+              <button
+                type="button"
+                onClick={flyHome}
+                className="fm-btn fm-btn-quiet fm-btn-sm ml-auto"
+              >
+                <LocateFixed className="size-3.5" /> Return to field
+              </button>
+            </div>
+            </div>
         )}
 
         {/* SOS strip (when active) */}
